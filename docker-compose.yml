@@ -1,14 +1,22 @@
-version: "3.8"
-
+# Stack del frontend para Portainer.
+# Define en el stack las variables NEXT_PUBLIC_API_BASE_URL y NEXT_PUBLIC_GOOGLE_CLIENT_ID:
+# Portainer las sustituye abajo y se usan al CONSTRUIR la imagen (Next las fija en el build).
+# Si cambian, hay que reconstruir la imagen ("Re-pull and redeploy" / "Build").
 services:
   fabribat-frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fabribat_frontend_prod
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?Defina NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:?Defina NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+    image: fabribat-frontend:latest
+    container_name: fabribat-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      # Aquí colocas las variables de entorno que tu frontend necesite en producción
-      - NEXT_PUBLIC_API_URL=http://tu_ip_del_backend:8000/api/v1
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

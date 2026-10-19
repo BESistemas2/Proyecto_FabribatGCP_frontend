@@ -41,11 +41,14 @@ import {
 } from "@/components/cargas/rpa-status-widget";
 import { CargasHistoryTable } from "@/components/cargas/cargas-history-table";
 import { useToast } from "@/lib/hooks/use-toast";
+import { parseFecha } from "@/lib/utils/format";
 
 export default function CargasPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const userEmail = user?.email || "operador@fabribat.com";
+  const { user, puedeOperar, esAdmin } = useAuth();
+  const userEmail = user?.email || "";
+  // Cambiar la key vuelve a montar el formulario (limpia archivo y vista previa tras subir)
+  const [formKey, setFormKey] = useState(0);
 
   const { data: cuentas, isLoading: cuentasLoading } = useCuentasBancarias();
   const [filtros, setFiltros] = useState<FiltrosCargas>({ page: 1, limit: 10 });
@@ -75,23 +78,10 @@ export default function CargasPage() {
   const page = cargasData?.page || 1;
   const limit = cargasData?.limit || 10;
 
-  // Evaluador flexible de fecha (ventana de 36 horas para tolerar desfases UTC vs UTC-5)
-  const isRecentOrToday = (fechaRaw: any) => {
-    if (!fechaRaw) return true;
-    let str = String(fechaRaw).trim();
-    if (
-      str.length === 19 &&
-      !str.includes("Z") &&
-      !str.includes("+") &&
-      !str.includes("-")
-    ) {
-      str += "Z";
-    }
-    const date = new Date(str);
-    if (isNaN(date.getTime())) return true;
-    const diffHours =
-      Math.abs(new Date().getTime() - date.getTime()) / (1000 * 60 * 60);
-    return diffHours <= 36;
+  // ¿La carga es de hoy? (el backend guarda la hora de Ecuador sin zona: se lee como hora local)
+  const isRecentOrToday = (fechaRaw: string | undefined) => {
+    const d = parseFecha(fechaRaw);
+    return !!d && d.toDateString() === new Date().toDateString();
   };
 
   // Cálculo corregido para los indicadores KPI
@@ -101,8 +91,7 @@ export default function CargasPage() {
       st === "COMPLETADO" ||
       st === "COMPLETADA" ||
       st === "SUCCESS" ||
-      st === "OK" ||
-      !c.estado;
+      st === "OK";
     return isOk && isRecentOrToday(c.fecha_carga || c.created_at);
   }).length;
 
@@ -127,24 +116,17 @@ export default function CargasPage() {
   ) => {
     if (!result.valid || !file) return;
 
-    const responsableEmail = formData.created_by || userEmail;
-
     try {
-      await uploadMutation.mutateAsync({
-        id_cuenta: formData.id_cuenta,
-        created_by: responsableEmail,
-        creado_por: responsableEmail,
-        archivo: file,
-      } as any);
+      const r = await uploadMutation.mutateAsync({ id_cuenta: formData.id_cuenta, archivo: file });
 
       toast({
-        title: "Carga iniciada",
-        description: `El archivo "${file.name}" se está procesando.`,
-        variant: "success",
+        title: r.advertencias.length ? "Carga completada con advertencias" : "Carga completada",
+        description: r.mensaje,
+        variant: r.advertencias.length ? "warning" : "success",
       });
       setSelectedFile(null);
       setValidationResult(null);
-      refetchCargas();
+      setFormKey((k) => k + 1);
     } catch (error) {
       toast({
         title: "Error al subir",
@@ -172,7 +154,7 @@ export default function CargasPage() {
       const result = await sincronizarMutation.mutateAsync();
       toast({
         title: "Catálogo sincronizado",
-        description: `${result.cuentas_nuevas} nuevas, ${result.cuentas_actualizadas} actualizadas`,
+        description: `${(result as any).total_procesados ?? 0} cuentas actualizadas desde Business Central.`,
         variant: "success",
       });
       refetchCargas();
@@ -186,38 +168,11 @@ export default function CargasPage() {
     }
   };
 
-  const handleViewDetails = (carga: CargaExtracto | any) => {
-    const importados =
-      carga.registros_importados ??
-      carga.registros_procesados ??
-      carga.registros_insertados ??
-      1136;
-
-    const duplicados = carga.registros_duplicados ?? 0;
-
-    let bancoName =
-      carga.banco_nombre || carga.banco_detectado || carga.banco || "GUAYAQUIL";
-
-    bancoName = bancoName
-      .toUpperCase()
-      .replace("BANCO DE ", "")
-      .replace("BANCO ", "");
-
-    const mensajeServidor =
-      carga.mensaje ||
-      carga.error_detalle ||
-      `Banco detectado: ${bancoName}. Leídos: ${importados}. Nuevos insertados: ${importados}. Duplicados omitidos: ${duplicados}.`;
-
+  const handleViewDetails = (carga: CargaExtracto) => {
     toast({
-      title: `Detalles de ${carga.nombre_archivo || carga.filename || "Extracto"}`,
-      description: mensajeServidor,
-    });
-  };
-
-  const handleDownload = (carga: CargaExtracto) => {
-    toast({
-      title: "Descarga iniciada",
-      description: `Generando reporte para ${carga.nombre_archivo}...`,
+      title: `Detalles de ${carga.nombre_archivo || "Extracto"}`,
+      description: carga.mensaje_log || "Sin detalle registrado para esta carga.",
+      variant: carga.estado === "ERROR" ? "destructive" : undefined,
     });
   };
 
@@ -249,7 +204,8 @@ export default function CargasPage() {
           <Button
             variant="outline"
             onClick={handleSincronizar}
-            disabled={sincronizarMutation.isPending || cuentasLoading}
+            disabled={!esAdmin || sincronizarMutation.isPending || cuentasLoading}
+            title={esAdmin ? undefined : "Solo el administrador puede sincronizar con Business Central"}
           >
             <RotateCcw
               className={cn(
@@ -307,7 +263,7 @@ export default function CargasPage() {
                 </p>
                 <Button
                   onClick={handleSincronizar}
-                  disabled={sincronizarMutation.isPending}
+                  disabled={!esAdmin || sincronizarMutation.isPending}
                   size="lg"
                 >
                   {sincronizarMutation.isPending
@@ -320,14 +276,24 @@ export default function CargasPage() {
             <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] min-w-0">
               {/* COLUMNA IZQUIERDA: Formulario */}
               <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-120px)] overflow-y-auto">
-                <CargaForm
-                  cuentas={cuentas || []}
-                  currentUserEmail={userEmail}
-                  onSubmit={handleUpload}
-                  onFileValidated={handleFileValidated}
-                  isSubmitting={uploadMutation.isPending}
-                  disabled={cuentasLoading}
-                />
+                {puedeOperar ? (
+                  <CargaForm
+                    key={formKey}
+                    cuentas={cuentas || []}
+                    currentUserEmail={userEmail}
+                    onSubmit={handleUpload}
+                    onFileValidated={handleFileValidated}
+                    isSubmitting={uploadMutation.isPending}
+                    disabled={cuentasLoading}
+                  />
+                ) : (
+                  <Alert>
+                    <AlertDescription>
+                      Su rol solo permite consultar. Para cargar extractos se necesita el rol
+                      Contabilidad o Administrador.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
 
               {/* COLUMNA DERECHA: Resumen + Vista Previa Dinámica (min-w-0 evita desbordamiento CSS Grid) */}
@@ -517,7 +483,7 @@ export default function CargasPage() {
             onLimitChange={handleLimitChange}
             onRefresh={handleRefresh}
             onViewDetails={handleViewDetails}
-            onDownload={handleDownload}
+            
           />
         </TabsContent>
 

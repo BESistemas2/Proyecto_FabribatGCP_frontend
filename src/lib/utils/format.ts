@@ -1,3 +1,34 @@
+/** Convierte números o textos numéricos de la API (Decimal llega como string) a number. */
+export function toNumber(value: number | string | null | undefined): number {
+  if (value === null || value === undefined || value === "") return 0;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Suma montos en centavos para evitar errores de coma flotante (0.1 + 0.2). */
+export function sumarMontos<T>(items: T[], obtener: (item: T) => number | string | null | undefined): number {
+  return items.reduce((acc, it) => acc + Math.round(toNumber(obtener(it)) * 100), 0) / 100;
+}
+
+/**
+ * Convierte fechas de la API a Date sin corrimiento de zona horaria:
+ * - "AAAA-MM-DD" se interpreta como fecha LOCAL (new Date() la tomaría como UTC y en
+ *   Ecuador mostraría el día anterior).
+ * - "AAAA-MM-DDTHH:mm:ss" sin zona se interpreta como hora local (así la guarda el backend).
+ * - "dd/mm/aaaa" también se acepta.
+ */
+export function parseFecha(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  const s = value.trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function formatMoney(
   value: number | string | null | undefined,
   options: {
@@ -16,16 +47,15 @@ export function formatMoney(
     showSign = false,
   } = options;
 
-  const numValue = typeof value === "string" ? parseFloat(value) : (value ?? 0);
+  const numValue = toNumber(value);
 
-  if (isNaN(numValue)) return "$0.00";
-
+  // "auto" muestra el signo menos de los débitos; "exceptZero" agrega además el "+"
   const formatter = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits,
     maximumFractionDigits,
-    signDisplay: showSign ? "exceptZero" : "never",
+    signDisplay: showSign ? "exceptZero" : "auto",
   });
 
   return formatter.format(numValue);
@@ -34,32 +64,21 @@ export function formatMoney(
 export function formatMoneyCompact(
   value: number | string | null | undefined,
 ): string {
-  const numValue = typeof value === "string" ? parseFloat(value) : (value ?? 0);
+  const numValue = toNumber(value);
+  const signo = numValue < 0 ? "-" : "";
+  const abs = Math.abs(numValue);
 
-  if (isNaN(numValue)) return "$0";
-
-  if (Math.abs(numValue) >= 1_000_000) {
-    return `$${(numValue / 1_000_000).toFixed(1)}M`;
-  }
-  if (Math.abs(numValue) >= 1_000) {
-    return `$${(numValue / 1_000).toFixed(1)}K`;
-  }
+  if (abs >= 1_000_000) return `${signo}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${signo}$${(abs / 1_000).toFixed(1)}K`;
   return formatMoney(numValue, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
 }
 
+/** @deprecated usar formatMoney (se mantiene por compatibilidad: mismo formato es-EC). */
 export function formatCurrency(amount: number | string): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (isNaN(num)) return "$0.00";
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
+  return formatMoney(amount);
 }
 
 export function formatDate(
@@ -72,8 +91,8 @@ export function formatDate(
   locale = "es-EC",
 ): string {
   if (!date) return "—";
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return "Fecha inválida";
+  const d = parseFecha(date);
+  if (!d) return "Fecha inválida";
   return d.toLocaleDateString(locale, options);
 }
 
@@ -97,9 +116,8 @@ export function formatDateTime(
 export function formatRelativeTime(
   date: string | Date | null | undefined,
 ): string {
-  if (!date) return "—";
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return "Fecha inválida";
+  const d = parseFecha(date);
+  if (!d) return "—";
 
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
@@ -114,26 +132,13 @@ export function formatRelativeTime(
   return formatDate(d);
 }
 
+/** @deprecated usar parseFecha. */
 export function parseDateString(dateStr: string): Date | null {
-  const formats = [
-    /^\d{4}-\d{2}-\d{2}$/,
-    /^\d{2}\/\d{2}\/\d{4}$/,
-    /^\d{2}-\d{2}-\d{4}$/,
-  ];
-
-  for (const format of formats) {
-    if (format.test(dateStr)) {
-      const date = new Date(dateStr);
-      if (!isNaN(date.getTime())) return date;
-    }
-  }
-  return null;
+  return parseFecha(dateStr);
 }
 
-const parseLocalDate = (dateStr: string): Date => {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
+/** "AAAA-MM-DD" -> Date local. */
+export const parseLocalDate = (dateStr: string): Date => parseFecha(dateStr) ?? new Date(NaN);
 
 export function getPeriodoLabel(fechaInicio: string, fechaFin: string): string {
   if (!fechaInicio || !fechaFin) return "Seleccionar período";

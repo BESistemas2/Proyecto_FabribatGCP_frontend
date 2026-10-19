@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActasGrid } from "@/components/actas/actas-grid";
 import { PartidasTransitoDrawer } from "@/components/actas/partidas-transito-drawer";
 import { useActas } from "@/lib/hooks/use-conciliacion";
+import { formatDate } from "@/lib/utils/format";
 import { useToast } from "@/lib/hooks/use-toast";
 import { conciliacionApi } from "@/lib/api/conciliacion";
 import { ResultadoConciliacionResponse } from "@/types/conciliacion";
@@ -94,15 +95,16 @@ export default function ActasPage() {
         style: "currency",
         currency: "USD",
       }).format(v || 0);
-    const fechaGen = acta.created_at
-      ? new Date(acta.created_at).toLocaleDateString("es-EC")
-      : "—";
+    const fechaGen = formatDate(acta.created_at);
+    // Todo dato que viene de la API se escapa antes de insertarlo en el HTML (evita XSS)
+    const esc = (v: unknown) =>
+      String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Acta de Conciliación - ${acta.periodo || "Detalle"}</title>
+          <title>Acta de Conciliación - ${esc(acta.periodo || "Detalle")}</title>
           <style>
             body { font-family: system-ui, -apple-system, sans-serif; padding: 24px; max-width: 800px; margin: 0 auto; color: #1e293b; }
             .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
@@ -121,22 +123,22 @@ export default function ActasPage() {
         <body onload="window.print(); window.onafterprint = () => window.close();">
           <div class="header">
             <h1 class="title">Acta de Conciliación Bancaria</h1>
-            <p class="subtitle">Cuenta: ${acta.cuenta_contable || "S/N"} — Período: ${acta.periodo || "—"}</p>
+            <p class="subtitle">Cuenta: ${esc(acta.banco || acta.cuenta_contable || "S/N")} — Período: ${esc(acta.periodo || "—")}</p>
             <span class="badge" style="background: ${
               ["CERRADO", "APROBADO"].includes(acta.estado?.toUpperCase())
                 ? "#22c55e"
                 : "#f59e0b"
             }; color: white;">
-              ${acta.estado || "BORRADOR"}
+              ${esc(acta.estado || "BORRADOR")}
             </span>
           </div>
           <div class="metrics">
-            <div class="metric"><div class="metric-label">Saldo Banco</div><div class="metric-value">${formatUSD(acta.saldo_banco)}</div></div>
-            <div class="metric"><div class="metric-label">Saldo Libros</div><div class="metric-value">${formatUSD(acta.saldo_libros)}</div></div>
+            <div class="metric"><div class="metric-label">Movimiento neto banco</div><div class="metric-value">${formatUSD(acta.saldo_banco)}</div></div>
+            <div class="metric"><div class="metric-label">Movimiento neto libros</div><div class="metric-value">${formatUSD(acta.saldo_libros)}</div></div>
             <div class="metric"><div class="metric-label">Total Conciliado</div><div class="metric-value">${formatUSD(acta.total_conciliado)}</div></div>
           </div>
           <div class="info">
-            <div class="info-row"><span class="info-label">Creador:</span><span class="info-value">${acta.creado_por || "Sistema"}</span></div>
+            <div class="info-row"><span class="info-label">Creador:</span><span class="info-value">${esc(acta.creado_por || "Sistema")}</span></div>
             <div class="info-row"><span class="info-label">Fecha Generación:</span><span class="info-value">${fechaGen}</span></div>
             <div class="info-row"><span class="info-label">Partidas en Tránsito:</span><span class="info-value">${acta.total_partidas_en_transito || 0}</span></div>
           </div>

@@ -22,7 +22,7 @@ export function MoneyFormat({
   zeroAsDash = false,
   negativeColor = true,
 }: MoneyFormatProps) {
-  const numValue = typeof value === 'string' ? parseFloat(value) : (value ?? 0);
+  const numValue = typeof value === 'string' ? Number(value) : (value ?? 0);
 
   if (isNaN(numValue)) {
     return <span className={cn('font-mono tabular-nums', className)}>—</span>;
@@ -37,7 +37,6 @@ export function MoneyFormat({
     : formatMoney(numValue, { showSign });
 
   const colorClass = negativeColor && numValue < 0 ? 'text-destructive' : '';
-  const signPrefix = showSign && numValue > 0 ? '+' : '';
 
   return (
     <span
@@ -48,7 +47,7 @@ export function MoneyFormat({
         className
       )}
     >
-      {signPrefix}{formatted}
+      {formatted}
     </span>
   );
 }

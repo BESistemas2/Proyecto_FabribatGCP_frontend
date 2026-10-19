@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, DragEvent, ChangeEvent } from "react";
+import { useCallback, useRef, useState, DragEvent, ChangeEvent } from "react";
 import {
   Upload,
   FileText,
@@ -14,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils/cn";
 
 export interface FileValidationResult {
@@ -94,10 +93,15 @@ function normalizeText(text: string): string {
     .trim();
 }
 
-function parseFile(
+// Vista previa: solo se leen las primeras filas (la validación completa la hace el backend)
+const FILAS_VISTA_PREVIA = 35;
+
+async function parseFile(
   file: File,
   requiredHeaders: string[],
 ): Promise<FileValidationResult> {
+  // xlsx (~400 kB) se descarga solo cuando el usuario elige un archivo
+  const XLSX = await import("xlsx");
   return new Promise((resolve) => {
     const reader = new FileReader();
 
@@ -116,7 +120,7 @@ function parseFile(
         const arrayBuffer = data as ArrayBuffer;
         const workbook = XLSX.read(new Uint8Array(arrayBuffer), {
           type: "array",
-          sheetRows: 35,
+          sheetRows: FILAS_VISTA_PREVIA,
         });
 
         if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
@@ -247,10 +251,14 @@ export function DropzoneUploader({
     useState<FileValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  // Evita que el resultado de un archivo anterior pise al del archivo elegido después
+  const validacionActual = useRef(0);
 
   const validateFile = useCallback(
     async (file: File) => {
+      const id = ++validacionActual.current;
       setIsValidating(true);
+      setValidationResult(null);
       const errors: string[] = [];
       const warnings: string[] = [];
 
@@ -279,6 +287,7 @@ export function DropzoneUploader({
       }
 
       const result = await parseFile(file, requiredHeaders);
+      if (id !== validacionActual.current) return; // llegó otro archivo mientras se leía este
       setValidationResult(result);
       onFileValidated(file, result);
       setIsValidating(false);
@@ -436,7 +445,7 @@ export function DropzoneUploader({
                             <strong className="font-semibold text-foreground">
                               {validationResult.preview.totalRows}
                             </strong>{" "}
-                            filas detectadas,{" "}
+                            filas en la vista previa,{" "}
                             <strong className="font-semibold text-foreground">
                               {validationResult.preview.headers.length}
                             </strong>{" "}
@@ -481,7 +490,7 @@ export function DropzoneUploader({
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     Muestra de las primeras filas (
-                    {validationResult.preview.totalRows} filas detectadas)
+                    {validationResult.preview.totalRows} filas en la vista previa)
                   </p>
                 </div>
                 <button

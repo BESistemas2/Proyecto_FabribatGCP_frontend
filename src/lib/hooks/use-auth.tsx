@@ -1,27 +1,22 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-} from "react";
-import {
-  AuthUser,
-  authApi,
-  GoogleLoginResponse,
-  isCorporateEmail,
-  CORPORATE_DOMAIN,
-} from "@/lib/api/auth";
-import { apiClient } from "@/lib/api/client";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { AuthUser, authApi } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { actualizarUsuario, guardarSesion, leerSesion, limpiarSesion } from "@/lib/auth/session";
+import type { RolUsuario } from "@/types/identity";
+
+/** Roles que pueden cargar extractos, conciliar, cerrar y enviar actas (igual que el backend). */
+export const ROLES_OPERACION: RolUsuario[] = ["ADMIN", "CONTABILIDAD"];
 
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  esAdmin: boolean;
+  puedeOperar: boolean;
   login: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -29,138 +24,89 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = "fabribat_auth_token";
-const USER_KEY = "fabribat_auth_user";
-
-const setAuthCookie = (token: string) => {
-  if (typeof document !== "undefined") {
-    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=28800; SameSite=Lax; Secure`;
-  }
-};
-
-const removeAuthCookie = () => {
-  if (typeof document !== "undefined") {
-    document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; Secure`;
-  }
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const initializeAuth = useCallback(async () => {
+  const cerrarSesionLocal = useCallback(() => {
+    limpiarSesion();
+    setToken(null);
+    setUser(null);
+    queryClient.clear(); // que otro usuario en la misma pestaña no vea datos en caché
+  }, [queryClient]);
+
+  // Al cargar: recuperar la sesión guardada y validarla contra la API (rol actualizado)
+  useEffect(() => {
+    const { token: guardado, user: usuarioGuardado } = leerSesion();
+    if (!guardado) {
+      setIsLoading(false);
+      return;
+    }
+    setToken(guardado);
+    setUser(usuarioGuardado);
+    authApi
+      .getMe()
+      .then((fresco) => {
+        setUser(fresco);
+        actualizarUsuario(fresco);
+      })
+      // Solo se cierra la sesión si la API la rechaza; un error de red o 500 no expulsa al usuario
+      .catch((e) => {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) cerrarSesionLocal();
+      })
+      .finally(() => setIsLoading(false));
+  }, [cerrarSesionLocal]);
+
+  const login = useCallback(async (idToken: string) => {
+    setIsLoading(true);
     try {
-      const storedToken =
-        typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
-      const storedUser =
-        typeof window !== "undefined" ? localStorage.getItem(USER_KEY) : null;
-
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        setAuthCookie(storedToken);
-        apiClient.defaults.headers.common["Authorization"] =
-          `Bearer ${storedToken}`;
-
-        try {
-          const freshUser = await authApi.getMe();
-          setUser(freshUser);
-          localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
-        } catch {
-          await logout();
-        }
-      }
-    } catch (error) {
-      console.error("Error initializing auth:", error);
+      const { access_token, user: datos } = await authApi.loginWithGoogle(idToken);
+      guardarSesion(access_token, datos);
+      setToken(access_token);
+      setUser(datos);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
+  const logout = useCallback(async () => {
+    cerrarSesionLocal();
+    window.google?.accounts?.id?.disableAutoSelect();
+    window.location.replace("/login");
+  }, [cerrarSesionLocal]);
 
-  const login = async (idToken: string) => {
-    setIsLoading(true);
+  const refreshUser = useCallback(async () => {
     try {
-      const response = await authApi.loginWithGoogle(idToken);
-
-      const { access_token, user: userData } = response;
-
-      if (!isCorporateEmail(userData.email)) {
-        throw new Error(
-          `Acceso denegado. Solo se permiten correos del dominio @${CORPORATE_DOMAIN}`,
-        );
-      }
-
-      setToken(access_token);
-      setUser(userData);
-
-      localStorage.setItem(TOKEN_KEY, access_token);
-      localStorage.setItem(USER_KEY, JSON.stringify(userData));
-      setAuthCookie(access_token);
-
-      apiClient.defaults.headers.common["Authorization"] =
-        `Bearer ${access_token}`;
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    } finally {
-      setIsLoading(false);
+      const fresco = await authApi.getMe();
+      setUser(fresco);
+      actualizarUsuario(fresco);
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) cerrarSesionLocal();
     }
-  };
+  }, [cerrarSesionLocal]);
 
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error("Error during logout:", error);
-    } finally {
-      setToken(null);
-      setUser(null);
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
-      removeAuthCookie();
-      delete apiClient.defaults.headers.common["Authorization"];
-      setIsLoading(false);
-    }
-  };
-
-  const refreshUser = async () => {
-    if (!token) return;
-    try {
-      const freshUser = await authApi.getMe();
-      setUser(freshUser);
-      localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
-    } catch (error) {
-      await logout();
-    }
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        isAuthenticated: !!token && !!user,
-        login,
-        logout,
-        refreshUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      token,
+      isLoading,
+      isAuthenticated: !!token && !!user,
+      esAdmin: user?.rol === "ADMIN",
+      puedeOperar: !!user && ROLES_OPERACION.includes(user.rol),
+      login,
+      logout,
+      refreshUser,
+    }),
+    [user, token, isLoading, login, logout, refreshUser],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (context === undefined) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 }

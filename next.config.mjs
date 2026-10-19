@@ -2,26 +2,21 @@
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
+  poweredByHeader: false,
+  // La app no usa next/image: se desactiva el optimizador (menos superficie expuesta)
+  images: { unoptimized: true },
   async headers() {
     return [
       {
         source: "/:path*",
         headers: [
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin-allow-popups",
-          },
+          // Necesario para el popup de inicio de sesión de Google
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
-      },
-    ];
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api-proxy/:path*",
-        destination: process.env.NEXT_PUBLIC_API_BASE_URL
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/:path*`
-          : "http://localhost:8000/api/v1/:path*",
       },
     ];
   },

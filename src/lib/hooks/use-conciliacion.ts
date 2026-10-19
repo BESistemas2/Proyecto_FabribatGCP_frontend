@@ -1,144 +1,91 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  UseQueryOptions,
-  UseMutationOptions,
-} from "@tanstack/react-query";
-import { conciliacionApi, ActaDetalleResponse } from "@/lib/api/conciliacion";
-import {
-  EjecutarConciliacionPayload,
-  ResultadoConciliacionResponse,
-  MayorEditadoResponse, // <-- 1. Importación agregada
-} from "@/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { conciliacionApi } from "@/lib/api/conciliacion";
+import type { ActaDetalleResponse, EjecutarConciliacionPayload, MayorEditadoResponse, ResultadoConciliacionResponse } from "@/types/conciliacion";
 
 export const conciliacionKeys = {
   all: ["conciliacion"] as const,
-  mayorEditado: (
-    fechaInicio: string,
-    fechaFin: string,
-    cuentaContable: string,
-  ) =>
-    [
-      ...conciliacionKeys.all,
-      "mayor-editado",
-      fechaInicio,
-      fechaFin,
-      cuentaContable,
-    ] as const,
-  actas: (limit?: number) => [...conciliacionKeys.all, "actas", limit] as const,
-  actaDetalle: (idActa: string) =>
-    [...conciliacionKeys.all, "actas", "detalle", idActa] as const,
+  mayorEditado: (idCuenta: string, fechaInicio: string, fechaFin: string) =>
+    [...conciliacionKeys.all, "mayor-editado", idCuenta, fechaInicio, fechaFin] as const,
+  actasAll: () => [...conciliacionKeys.all, "actas"] as const,
+  actas: (limit: number, idCuenta?: string) => [...conciliacionKeys.all, "actas", limit, idCuenta ?? null] as const,
+  actaDetalle: (idActa: string) => [...conciliacionKeys.all, "acta-detalle", idActa] as const,
+  grupos: (idCuenta: string, fechaInicio: string, fechaFin: string) =>
+    [...conciliacionKeys.all, "grupos", idCuenta, fechaInicio, fechaFin] as const,
 };
 
-export function useMayorEditado(
-  fechaInicio: string,
-  fechaFin: string,
-  cuentaContable: string,
-  enabled = true,
-  options?: UseQueryOptions<MayorEditadoResponse, Error>, // <-- 2. Tipo de respuesta actualizado
-) {
-  return useQuery({
-    queryKey: conciliacionKeys.mayorEditado(
-      fechaInicio,
-      fechaFin,
-      cuentaContable,
-    ),
-    queryFn: () =>
-      conciliacionApi.getMayorEditado(fechaInicio, fechaFin, cuentaContable),
-    enabled: enabled && !!fechaInicio && !!fechaFin && !!cuentaContable,
-    staleTime: 5 * 60 * 1000,
-    ...options,
-  });
-}
-
-export function useEjecutarAutoMatch(
-  options?: UseMutationOptions<
-    ResultadoConciliacionResponse,
-    Error,
-    {
-      payload: EjecutarConciliacionPayload;
-      fechaInicio: string;
-      fechaFin: string;
-    }
-  >,
-) {
+/** Refresca todo lo que cambia tras conciliar, cerrar o reabrir. */
+function useInvalidarConciliacion() {
   const queryClient = useQueryClient();
-  const { onSuccess, ...restOptions } = options || {};
-
-  return useMutation({
-    mutationFn: ({ payload, fechaInicio, fechaFin }) =>
-      conciliacionApi.ejecutarMatch({
-        ...payload,
-        fecha_inicio: fechaInicio,
-        fecha_fin: fechaFin,
-      }),
-    retry: false, // Desactiva reintentos automáticos en ejecuciones pesadas que expiren
-    onSuccess: (data, variables, context) => {
-      // Invalida la caché para refrescar movimientos bancarios, mayor contable y actas
-      queryClient.invalidateQueries({ queryKey: ["bancos"] });
-      queryClient.invalidateQueries({ queryKey: conciliacionKeys.all });
-
-      if (onSuccess) {
-        (onSuccess as Function)(data, variables, context);
-      }
-    },
-    ...restOptions,
-  });
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["bancos"] });
+    queryClient.invalidateQueries({ queryKey: conciliacionKeys.all });
+  };
 }
 
-export function useActas(
-  limit = 50,
-  options?: UseQueryOptions<ResultadoConciliacionResponse[], Error>,
-) {
-  return useQuery({
-    queryKey: conciliacionKeys.actas(limit),
-    queryFn: () => conciliacionApi.getActas(limit),
-    staleTime: 2 * 60 * 1000,
-    ...options,
-  });
-}
-
-export function useActaDetalle(
-  idActa: string,
-  enabled = true,
-  options?: UseQueryOptions<ActaDetalleResponse, Error>,
-) {
-  return useQuery({
-    queryKey: conciliacionKeys.actaDetalle(idActa),
-    queryFn: () => conciliacionApi.getActaDetalle(idActa),
-    enabled: enabled && !!idActa,
+export function useMayorEditado(idCuenta: string, fechaInicio: string, fechaFin: string, enabled = true) {
+  return useQuery<MayorEditadoResponse, Error>({
+    queryKey: conciliacionKeys.mayorEditado(idCuenta, fechaInicio, fechaFin),
+    queryFn: () => conciliacionApi.getMayorEditado(idCuenta, fechaInicio, fechaFin),
+    enabled: enabled && !!idCuenta && !!fechaInicio && !!fechaFin,
     staleTime: 5 * 60 * 1000,
-    ...options,
   });
 }
 
-export function useConciliados(
-  idCuenta: string,
-  fechaInicio: string,
-  fechaFin: string,
-  enabled = true,
-) {
+export function useEjecutarAutoMatch() {
+  const invalidar = useInvalidarConciliacion();
+  return useMutation<ResultadoConciliacionResponse, Error, EjecutarConciliacionPayload>({
+    mutationFn: (payload) => conciliacionApi.ejecutarMatch(payload),
+    retry: false,
+    onSuccess: invalidar,
+  });
+}
+
+export function useActas(limit = 50, idCuenta?: string, enabled = true) {
+  return useQuery<ResultadoConciliacionResponse[], Error>({
+    queryKey: conciliacionKeys.actas(limit, idCuenta),
+    queryFn: () => conciliacionApi.getActas(limit, idCuenta),
+    staleTime: 60 * 1000,
+    enabled,
+  });
+}
+
+export function useActaDetalle(idActa: string | null | undefined, enabled = true) {
+  return useQuery<ActaDetalleResponse, Error>({
+    queryKey: conciliacionKeys.actaDetalle(idActa || ""),
+    queryFn: () => conciliacionApi.getActaDetalle(idActa!),
+    enabled: enabled && !!idActa,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useConciliados(idCuenta: string, fechaInicio: string, fechaFin: string, enabled = true) {
   return useQuery({
-    queryKey: ["conciliacion", "grupos", idCuenta, fechaInicio, fechaFin],
-    queryFn: () =>
-      conciliacionApi.getConciliados(idCuenta, fechaInicio, fechaFin),
+    queryKey: conciliacionKeys.grupos(idCuenta, fechaInicio, fechaFin),
+    queryFn: () => conciliacionApi.getConciliados(idCuenta, fechaInicio, fechaFin),
     enabled: enabled && !!idCuenta && !!fechaInicio && !!fechaFin,
     staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
   });
 }
 
-export function useEnviarReporteEmail(
-  options?: UseMutationOptions<
-    any,
-    Error,
-    { idActa: string; destinatarios: string[]; comentario?: string }
-  >,
-) {
-  return useMutation({
+export function useCerrarActa() {
+  const invalidar = useInvalidarConciliacion();
+  return useMutation<ResultadoConciliacionResponse, Error, string>({
+    mutationFn: (idActa) => conciliacionApi.cerrarActa(idActa),
+    onSuccess: invalidar,
+  });
+}
+
+export function useReabrirActa() {
+  const invalidar = useInvalidarConciliacion();
+  return useMutation<ResultadoConciliacionResponse, Error, string>({
+    mutationFn: (idActa) => conciliacionApi.reabrirActa(idActa),
+    onSuccess: invalidar,
+  });
+}
+
+export function useEnviarReporteEmail() {
+  return useMutation<{ status: string; message: string }, Error, { idActa: string; destinatarios: string[]; comentario?: string }>({
     mutationFn: ({ idActa, destinatarios, comentario }) =>
       conciliacionApi.enviarReporteEmail(idActa, { destinatarios, comentario }),
-    ...options,
   });
 }

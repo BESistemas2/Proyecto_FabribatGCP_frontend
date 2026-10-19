@@ -1,0 +1,7 @@
+# Archivos que Docker/Linux leen: siempre LF
+* text=auto
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.yml text eol=lf
+.env.example text eol=lf
+*.sh text eol=lf

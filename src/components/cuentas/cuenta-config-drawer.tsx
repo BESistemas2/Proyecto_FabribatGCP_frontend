@@ -136,18 +136,18 @@ export function CuentaConfigDrawer({
         rpa_habilitado: cuenta.rpa_habilitado,
         auto_match_habilitado: cuenta.auto_match_habilitado,
         rpa_frecuencia: cuenta.rpa_frecuencia || "DIARIA",
-        rpa_hora_ejecucion: cuenta.rpa_hora_ejecucion || DEFAULT_RPA_HORA,
+        rpa_hora_ejecucion: (cuenta.rpa_hora_ejecucion || DEFAULT_RPA_HORA).slice(0, 5),
         rpa_intervalo_minutos:
           cuenta.rpa_intervalo_minutos || DEFAULT_INTERVALO,
         auto_match_frecuencia:
           cuenta.auto_match_frecuencia ?? cuenta.rpa_frecuencia ?? "DIARIA",
         auto_match_hora_ejecucion:
-          cuenta.auto_match_hora_ejecucion || DEFAULT_AUTO_MATCH_HORA,
+          (cuenta.auto_match_hora || cuenta.auto_match_hora_ejecucion || DEFAULT_AUTO_MATCH_HORA).slice(0, 5),
         auto_match_intervalo_minutos:
           cuenta.auto_match_intervalo_minutos ??
           cuenta.rpa_intervalo_minutos ??
           DEFAULT_INTERVALO,
-        activo: true,
+        activo: cuenta.activo ?? true,
       });
     }
   }, [cuenta, form]);
@@ -162,8 +162,10 @@ export function CuentaConfigDrawer({
       rpa_hora_ejecucion: data.rpa_hora_ejecucion,
       rpa_intervalo_minutos: data.rpa_intervalo_minutos,
       auto_match_frecuencia: data.auto_match_frecuencia,
-      auto_match_hora_ejecucion: data.auto_match_hora_ejecucion,
+      // el backend llama a este campo auto_match_hora (antes se perdía)
+      auto_match_hora: data.auto_match_hora_ejecucion,
       auto_match_intervalo_minutos: data.auto_match_intervalo_minutos,
+      activo: data.activo,
     };
 
     try {

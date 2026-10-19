@@ -11,6 +11,9 @@ export interface KPICardsProps {
   saldoLibros: number | null;
   tieneExtractoCargado?: boolean;
   isLoading?: boolean;
+  /** Nº de partidas pendientes de cada lado (banco / BC) */
+  pendientesBanco?: number;
+  pendientesErp?: number;
 }
 
 export function KPICards({
@@ -18,15 +21,18 @@ export function KPICards({
   saldoLibros,
   tieneExtractoCargado = true,
   isLoading,
+  pendientesBanco = 0,
+  pendientesErp = 0,
 }: KPICardsProps) {
   const diferencia =
     tieneExtractoCargado && saldoBanco !== null && saldoLibros !== null
       ? saldoBanco - saldoLibros
       : null;
 
-  const isCuadrado = diferencia !== null && Math.abs(diferencia) < 0.01;
+  // Conciliado = no queda nada pendiente de cruzar en ninguno de los dos lados
+  const isCuadrado = diferencia !== null && pendientesBanco + pendientesErp === 0;
 
-  let estadoLabel = "DESCUADRADO";
+  let estadoLabel = `${pendientesBanco + pendientesErp} PENDIENTES`;
   let estadoClass =
     "bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-300";
   let estadoIcon = "⚠";
@@ -49,7 +55,7 @@ export function KPICards({
       <Card className="kpi-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Saldo Banco
+            Pendiente banco ({pendientesBanco})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -80,7 +86,7 @@ export function KPICards({
       <Card className="kpi-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Saldo Libros BC
+            Pendiente libros BC ({pendientesErp})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -99,7 +105,7 @@ export function KPICards({
       <Card className="kpi-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Diferencia
+            Diferencia (banco - libros)
           </CardTitle>
         </CardHeader>
         <CardContent>

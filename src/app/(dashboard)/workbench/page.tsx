@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/lib/hooks/use-toast";
+import { sumarMontos } from "@/lib/utils/format";
 import { RefreshCw, Info, Layers, CheckCheck, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -22,12 +25,14 @@ import {
   useMayorEditado,
   useEjecutarAutoMatch,
   useConciliados,
+  useActas,
 } from "@/lib/hooks/use-conciliacion";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function WorkbenchPage() {
-  const { user } = useAuth();
-  const userEmail = user?.email || "usuario@bateriasecuador.com";
+  const { user, esAdmin, puedeOperar } = useAuth();
+  const { toast } = useToast();
+  const userEmail = user?.email || "";
 
   // Modo de vista: "pendientes" (SplitView Dual) vs "conciliados" (Árbol 1:N)
   const [vistaModo, setVistaModo] = useState<"pendientes" | "conciliados">(
@@ -44,22 +49,28 @@ export default function WorkbenchPage() {
   const cuentaSeleccionada = cuentas?.find(
     (c) => c.id_cuenta === selectedCuentaId,
   );
-  const cuentaContable = cuentaSeleccionada?.cuenta_contable_bc || "";
+  const periodo = fechaInicio.substring(0, 7); // AAAA-MM
+  const filtrosListos = !!selectedCuentaId && !!fechaInicio && !!fechaFin;
 
-  // 1. Movimientos Bancarios Pendientes
+  // 1. Movimientos bancarios pendientes DEL PERIODO
   const { data: movimientosBanco, isLoading: movimientosLoading } =
-    useMovimientosPendientes(
-      selectedCuentaId || "",
-      !!selectedCuentaId && !!fechaInicio && !!fechaFin,
-    );
+    useMovimientosPendientes(selectedCuentaId || "", fechaInicio, fechaFin, filtrosListos);
 
-  // 2. Movimientos ERP (Mayor Editado + Novedades Sync)
+  // 2. Movimientos de BC (libro de bancos) pendientes del periodo
   const { data: mayorData, isLoading: mayorLoading } = useMayorEditado(
+    selectedCuentaId || "",
     fechaInicio,
     fechaFin,
-    cuentaContable,
-    !!selectedCuentaId && !!fechaInicio && !!fechaFin && !!cuentaContable,
+    filtrosListos,
   );
+
+  // 3. Acta real de la cuenta y periodo (la crea el Auto-Match)
+  const { data: actasCuenta } = useActas(24, selectedCuentaId || undefined, !!selectedCuentaId);
+  const actaActual = useMemo(
+    () => actasCuenta?.find((a) => a.periodo === periodo),
+    [actasCuenta, periodo],
+  );
+  const actaCerrada = !!actaActual && actaActual.estado !== "BORRADOR";
 
   // 3. Movimientos Conciliados
   const { data: gruposConciliados, isLoading: conciliadosLoading } =
@@ -73,7 +84,7 @@ export default function WorkbenchPage() {
         !!fechaFin,
     );
 
-  const movimientosErp = mayorData?.data || [];
+  const movimientosErp = useMemo(() => mayorData?.data ?? [], [mayorData]);
   const novedadesSync = mayorData?.novedades_sync;
   const autoMatchMutation = useEjecutarAutoMatch();
 
@@ -85,12 +96,9 @@ export default function WorkbenchPage() {
 
   const tieneExtractoCargado = (movimientosBanco?.length ?? 0) > 0;
 
-  const saldoBanco =
-    movimientosBanco?.reduce(
-      (sum, m) => sum + (m.tipo_movimiento === "CREDITO" ? m.monto : -m.monto),
-      0,
-    ) ?? 0;
-  const saldoLibros = movimientosErp?.reduce((sum, m) => sum + m.monto, 0) ?? 0;
+  // Montos con signo en ambos lados: la suma ya es el neto (en centavos, sin errores de redondeo)
+  const saldoBanco = useMemo(() => sumarMontos(movimientosBanco ?? [], (m) => m.monto), [movimientosBanco]);
+  const saldoLibros = useMemo(() => sumarMontos(movimientosErp, (m) => m.monto), [movimientosErp]);
 
   const handlePeriodoChange = useCallback((inicio: string, fin: string) => {
     setFechaInicio(inicio);
@@ -103,16 +111,37 @@ export default function WorkbenchPage() {
 
   const handleSincronizar = async () => {
     try {
-      await sincronizarMutation.mutateAsync();
+      const r = await sincronizarMutation.mutateAsync();
+      toast({ title: "Catálogo sincronizado", description: `${(r as any).total_procesados ?? 0} cuentas actualizadas desde Business Central.`, variant: "success" });
     } catch (error) {
-      console.error("Error sincronizando catálogo:", error);
+      toast({ title: "Error al sincronizar", description: error instanceof Error ? error.message : "Error desconocido", variant: "destructive" });
     }
   };
 
   const handleEjecutarAutoMatch = () => {
     if (!selectedCuentaId || !fechaInicio || !fechaFin) return;
-    // La mutación se dispara desde el componente AutoMatchButton directamente
+    autoMatchMutation.mutate(
+      { id_cuenta: selectedCuentaId, periodo, fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      {
+        onSuccess: (data) =>
+          toast({
+            title: "Auto-Match completado",
+            description: `${data.movimientos_conciliados ?? 0} movimiento(s) conciliado(s). Quedan ${data.transitos_banco} del banco y ${data.transitos_erp} de BC pendientes.`,
+            variant: "success",
+          }),
+        onError: (error) =>
+          toast({ title: "Error en Auto-Match", description: error.message, variant: "destructive" }),
+      },
+    );
   };
+
+  const motivoSinAutoMatch = !puedeOperar
+    ? "Su rol solo permite consultar"
+    : actaCerrada
+      ? "El acta de este periodo está cerrada"
+      : !tieneExtractoCargado
+        ? "No hay movimientos del banco pendientes en el periodo"
+        : undefined;
 
   useEffect(() => {
     if (cuentas && cuentas.length > 0 && !selectedCuentaId) {
@@ -120,11 +149,6 @@ export default function WorkbenchPage() {
     }
   }, [cuentas, selectedCuentaId]);
 
-  // Identificador de acta dinámico según cuenta y período
-  const idActaActual =
-    selectedCuentaId && fechaInicio
-      ? `acta-${selectedCuentaId}-${fechaInicio.substring(0, 7)}`
-      : "";
 
   return (
     <div className="flex flex-col gap-6 h-full min-w-0">
@@ -160,13 +184,16 @@ export default function WorkbenchPage() {
           </Tabs>
 
           {/* Modal de Exportación / Envío de Reporte por Correo */}
-          {selectedCuentaId && fechaInicio && idActaActual && (
-            <EnviarReporteModal
-              idActa={idActaActual}
-              defaultEmail={userEmail}
-            />
+          {actaActual && (
+            <Badge variant={actaCerrada ? "secondary" : "outline"} className="text-xs">
+              Acta {periodo}: {actaActual.estado}
+            </Badge>
+          )}
+          {puedeOperar && actaActual && (
+            <EnviarReporteModal idActa={actaActual.id_acta} defaultEmail={userEmail} />
           )}
 
+          {esAdmin && (
           <button
             onClick={handleSincronizar}
             disabled={sincronizarMutation.isPending || cuentasLoading}
@@ -181,6 +208,7 @@ export default function WorkbenchPage() {
             />
             Sincronizar Catálogo
           </button>
+          )}
         </div>
       </div>
 
@@ -203,7 +231,14 @@ export default function WorkbenchPage() {
       </Card>
 
       {/* Banner de Notificación de Novedades desde Business Central */}
-      {novedadesSync?.requiere_rematch && vistaModo === "pendientes" && (
+      {mayorData?.advertencia && (
+        <div className="flex items-center gap-2.5 p-3.5 rounded-lg bg-destructive/10 border border-destructive/30 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+          <span>{mayorData.advertencia}</span>
+        </div>
+      )}
+
+      {novedadesSync?.requiere_rematch && vistaModo === "pendientes" && puedeOperar && !actaCerrada && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 animate-in fade-in-0">
           <div className="flex items-center gap-2.5 text-sm font-medium">
             <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -264,6 +299,8 @@ export default function WorkbenchPage() {
               saldoBanco={saldoBanco}
               saldoLibros={saldoLibros}
               tieneExtractoCargado={tieneExtractoCargado}
+              pendientesBanco={movimientosBanco?.length ?? 0}
+              pendientesErp={movimientosErp.length}
             />
           )}
         </CardContent>
@@ -285,18 +322,10 @@ export default function WorkbenchPage() {
         <Card className="flex-1 min-h-0">
           <CardContent className="pt-0 h-full">
             <AutoMatchButton
-              idCuenta={selectedCuentaId!}
-              periodo={fechaInicio.substring(0, 7)}
-              fechaInicio={fechaInicio}
-              fechaFin={fechaFin}
-              cuentaContable={cuentaContable}
-              creadoPor={userEmail}
-              disabled={
-                autoMatchMutation.isPending ||
-                movimientosLoading ||
-                mayorLoading ||
-                !tieneExtractoCargado
-              }
+              onClick={handleEjecutarAutoMatch}
+              isPending={autoMatchMutation.isPending}
+              disabled={!!motivoSinAutoMatch || movimientosLoading || mayorLoading}
+              motivo={motivoSinAutoMatch}
             />
             <Separator className="my-4" />
             <div className="h-[calc(100vh-420px)] min-h-[400px]">
@@ -316,9 +345,6 @@ export default function WorkbenchPage() {
               <ConciliadosView
                 grupos={gruposConciliados || []}
                 isLoading={conciliadosLoading}
-                onDesconciliar={(id) => {
-                  console.log("Desconciliar id:", id);
-                }}
               />
             </div>
           </CardContent>

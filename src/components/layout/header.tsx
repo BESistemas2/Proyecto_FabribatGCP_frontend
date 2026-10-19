@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +27,6 @@ import {
   Banknote,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { formatRelativeTime } from '@/lib/utils/format';
 
 interface HeaderProps {
   collapsed: boolean;
@@ -37,7 +35,6 @@ interface HeaderProps {
 
 export function Header({ collapsed, onToggle }: HeaderProps) {
   const { user, logout, isAuthenticated } = useAuth();
-  const pathname = usePathname();
   const [logoutLoading, setLogoutLoading] = useState(false);
 
   const handleLogout = async () => {

@@ -66,7 +66,7 @@ export function ActaCard({
           <div className="flex flex-col gap-1.5 overflow-hidden">
             <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
               <Building2 className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{acta.cuenta_contable}</span>
+              <span className="truncate" title={`Cuenta contable ${acta.cuenta_contable}`}>{acta.banco || acta.cuenta_contable}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
@@ -85,21 +85,21 @@ export function ActaCard({
       <CardContent className="p-4 flex-1">
         <div className="space-y-3 text-sm">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Saldo Banco:</span>
+            <span className="text-muted-foreground">Mov. neto banco:</span>
             <span className="font-mono font-medium">
               {formatCurrency(Number(acta.saldo_banco))}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Saldo Libros:</span>
+            <span className="text-muted-foreground">Mov. neto libros:</span>
             <span className="font-mono font-medium">
               {formatCurrency(Number(acta.saldo_libros))}
             </span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t">
-            <span className="font-medium text-foreground">Conciliado:</span>
+            <span className="font-medium text-foreground">Partidas pendientes:</span>
             <span className="font-mono font-semibold text-primary">
-              {formatCurrency(Number(acta.total_conciliado))}
+              {acta.total_partidas_en_transito ?? 0}
             </span>
           </div>
         </div>

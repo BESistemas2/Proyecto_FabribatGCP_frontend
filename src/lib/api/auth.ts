@@ -6,7 +6,7 @@ export interface GoogleLoginRequest {
 }
 
 export interface AuthUser {
-  id_usuario: string; // 👈 Ajustado: en el backend se llama id_usuario
+  id_usuario: string;
   email: string;
   name: string;
   picture?: string;
@@ -17,6 +17,7 @@ export interface AuthUser {
 export interface GoogleLoginResponse {
   access_token: string;
   token_type: string;
+  expires_in?: number;
   user: AuthUser;
 }
 
@@ -30,12 +31,6 @@ export const authApi = {
     );
 
     return data;
-  },
-
-  // Manejo de Logout puramente local para no generar error 404
-  logout: async (): Promise<void> => {
-    localStorage.removeItem("access_token");
-    sessionStorage.clear();
   },
 
   getMe: async (): Promise<AuthUser> => {

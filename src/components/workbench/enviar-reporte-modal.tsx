@@ -78,7 +78,7 @@ export function EnviarReporteModal({
     } catch (error) {
       toast({
         title: "Error al enviar",
-        description: "No se pudo enviar el correo. Verifique la dirección.",
+        description: error instanceof Error ? error.message : "No se pudo enviar el correo.",
         variant: "destructive",
       });
     } finally {

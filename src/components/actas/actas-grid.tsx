@@ -14,6 +14,7 @@ import {
 } from "@/types/conciliacion";
 import { ActaCard, ActaCardSkeleton } from "./acta-card";
 import { EnviarReporteModal } from "@/components/actas/enviar-reporte-modal";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 interface ActasGridProps {
   actas: ResultadoConciliacionResponse[];
@@ -70,6 +71,7 @@ export function ActasGrid({
 
   // Estado para controlar qué acta se va a enviar por correo
   const [actaParaEnviar, setActaParaEnviar] = useState<string | null>(null);
+  const { puedeOperar } = useAuth();
 
   const estadoRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLDivElement>(null);
@@ -297,7 +299,7 @@ export function ActasGrid({
             acta={acta}
             onViewTransito={onViewTransito}
             onDownload={onDownload}
-            onSendEmail={() => setActaParaEnviar(acta.id_acta)}
+            onSendEmail={puedeOperar ? () => setActaParaEnviar(acta.id_acta) : undefined}
           />
         ))}
       </div>

@@ -14,32 +14,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
+import { sumarMontos } from "@/lib/utils/format";
 
-export interface MovimientoBCVinculado {
-  id_movimiento_bc: string;
-  num_documento: string;
-  external_document_no?: string;
-  fecha: string;
-  concepto: string;
-  monto: number;
-  cuenta_contable: string;
-}
-
-export interface GrupoConciliado {
-  id_conciliacion: string;
-  fecha_conciliacion: string;
-  regla_aplicada: string;
-  creado_por: string;
-  banco: {
-    id_movimiento_banco: string;
-    fecha: string;
-    concepto: string;
-    referencia: string;
-    monto: number;
-    tipo: "CREDITO" | "DEBITO" | string;
-  };
-  partidas_bc: MovimientoBCVinculado[];
-}
+import type { GrupoConciliado } from "@/types/conciliacion";
+export type { GrupoConciliado, MovimientoBCVinculado } from "@/types/conciliacion";
 
 interface ConciliadosViewProps {
   grupos?: GrupoConciliado[];
@@ -197,10 +175,7 @@ export function ConciliadosView({
             {gruposFiltrados.map((grupo) => {
               const isExpanded = !!expandedRows[grupo.id_conciliacion];
               const reglaInfo = getReglaBadge(grupo.regla_aplicada);
-              const totalBC = (grupo.partidas_bc || []).reduce(
-                (sum, p) => sum + (p.monto || 0),
-                0,
-              );
+              const totalBC = sumarMontos(grupo.partidas_bc || [], (p) => p.monto);
 
               return (
                 <div key={grupo.id_conciliacion} className="transition-colors">

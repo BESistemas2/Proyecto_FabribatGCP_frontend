@@ -1,4 +1,5 @@
 "use client";
+import { parseFecha } from "@/lib/utils/format";
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
@@ -77,22 +78,8 @@ function resolveBancoNombre(carga: any): string {
   return carga.alias_cuenta || "Banco";
 }
 
-function parseFechaNormalizada(fechaRaw: any): Date {
-  if (!fechaRaw) return new Date();
-  if (fechaRaw instanceof Date) return fechaRaw;
-
-  let str = String(fechaRaw).trim();
-  // Si falta offset o 'Z', forzar 'Z' para parsear como UTC y no correr 5 horas
-  if (
-    str.length === 19 &&
-    !str.includes("Z") &&
-    !str.includes("+") &&
-    !str.includes("-")
-  ) {
-    str += "Z";
-  }
-  const parsed = new Date(str);
-  return isNaN(parsed.getTime()) ? new Date() : parsed;
+function parseFechaNormalizada(fechaRaw: any): Date | null {
+  return parseFecha(fechaRaw);
 }
 
 export function CargasHistoryTable({
@@ -190,8 +177,8 @@ export function CargasHistoryTable({
       const direction = sortConfig.direction === "asc" ? 1 : -1;
 
       if (sortConfig.key === "fecha_carga") {
-        const dateA = parseFechaNormalizada(aVal).getTime();
-        const dateB = parseFechaNormalizada(bVal).getTime();
+        const dateA = parseFechaNormalizada(aVal)?.getTime() ?? 0;
+        const dateB = parseFechaNormalizada(bVal)?.getTime() ?? 0;
         return (dateA - dateB) * direction;
       }
 
@@ -438,7 +425,7 @@ export function CargasHistoryTable({
 
                     return (
                       <TableRow
-                        key={carga.id_carga || Math.random()}
+                        key={carga.id_carga}
                         className="hover:bg-muted/50"
                       >
                         <TableCell>
@@ -460,10 +447,14 @@ export function CargasHistoryTable({
                           {bancoNombre}
                         </TableCell>
                         <TableCell className="font-mono text-sm whitespace-nowrap">
-                          {formatDate(fechaObj.toISOString())}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            ({formatRelativeTime(fechaObj.toISOString())})
-                          </span>
+                          {fechaObj ? (
+                            <>
+                              {formatDate(fechaObj)}
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                ({formatRelativeTime(fechaObj)})
+                              </span>
+                            </>
+                          ) : "—"}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums">
                           <div className="space-y-0.5">

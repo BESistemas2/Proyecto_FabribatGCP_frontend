@@ -22,12 +22,23 @@ import {
   useUpdateCuentaBancaria,
   useSincronizarCatalogo,
 } from "@/lib/hooks/use-bancos";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { useToast } from "@/lib/hooks/use-toast";
 import { CuentaBancaria } from "@/types/bancos";
 import { cn } from "@/lib/utils/cn";
 
 export default function CuentasPage() {
   const { toast } = useToast();
+  const { esAdmin } = useAuth();
+
+  // Configurar cuentas y sincronizar con BC es solo para ADMIN (el backend también lo exige)
+  const soloAdmin = () => {
+    toast({
+      title: "Acción no permitida",
+      description: "Solo el administrador puede configurar cuentas o sincronizar con Business Central.",
+      variant: "destructive",
+    });
+  };
 
   const {
     data: cuentas,
@@ -43,9 +54,11 @@ export default function CuentasPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleConfigClick = useCallback((cuenta: CuentaBancaria) => {
+    if (!esAdmin) return soloAdmin();
     setSelectedCuenta(cuenta);
     setDrawerOpen(true);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esAdmin]);
 
   const handleCloseDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -53,6 +66,7 @@ export default function CuentasPage() {
   }, []);
 
   const handleRpaToggle = async (idCuenta: string, enabled: boolean) => {
+    if (!esAdmin) return soloAdmin();
     try {
       await updateMutation.mutateAsync({
         idCuenta,
@@ -76,6 +90,7 @@ export default function CuentasPage() {
   };
 
   const handleAutoMatchToggle = async (idCuenta: string, enabled: boolean) => {
+    if (!esAdmin) return soloAdmin();
     try {
       await updateMutation.mutateAsync({
         idCuenta,
@@ -99,11 +114,12 @@ export default function CuentasPage() {
   };
 
   const handleSyncClick = async () => {
+    if (!esAdmin) return soloAdmin();
     try {
       const result = await sincronizarMutation.mutateAsync();
       toast({
         title: "Catálogo sincronizado",
-        description: `${result.cuentas_nuevas} cuentas nuevas, ${result.cuentas_actualizadas} actualizadas`,
+        description: `${(result as any).total_procesados ?? 0} cuentas actualizadas desde Business Central.`,
         variant: "success",
       });
       refetchCuentas();

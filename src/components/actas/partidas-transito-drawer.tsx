@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { X, Download, Printer, Loader2, AlertCircle, CheckCircle, FileText, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { X, Download, Printer, Loader2, AlertCircle, FileText, ChevronRight, RotateCcw, Lock, Unlock } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,12 +12,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MoneyFormat } from '@/components/shared/money-format';
-import { formatDate, formatMoney } from '@/lib/utils/format';
+import { formatDate, sumarMontos } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
 import { ResultadoConciliacionResponse } from '@/types/conciliacion';
-import { conciliacionApi, PartidaTransito, ActaDetalleResponse } from '@/lib/api/conciliacion';
+import type { PartidaTransito } from '@/types/conciliacion';
+import { useActaDetalle, useCerrarActa, useReabrirActa } from '@/lib/hooks/use-conciliacion';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useToast } from '@/lib/hooks/use-toast';
 
-const TIPO_CONFIG = {
+const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   CREDITO: { label: 'Crédito', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/30' },
   DEBITO: { label: 'Débito', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-950/30' },
 };
@@ -37,40 +40,35 @@ export function PartidasTransitoDrawer({
   onDownload,
   onPrint,
 }: PartidasTransitoDrawerProps) {
-  const [detalle, setDetalle] = useState<ActaDetalleResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'banco' | 'erp'>('banco');
+  const { puedeOperar, esAdmin } = useAuth();
+  const { toast } = useToast();
+  // React Query: cancela respuestas viejas al cambiar de acta y comparte caché
+  const { data: detalle, isLoading, error: errorQuery, refetch } = useActaDetalle(acta?.id_acta, open);
+  const error = errorQuery?.message ?? null;
+  const fetchDetalle = () => refetch();
+  const cerrarMutation = useCerrarActa();
+  const reabrirMutation = useReabrirActa();
 
-  useEffect(() => {
-    if (open && acta) {
-      fetchDetalle();
-    } else {
-      setDetalle(null);
-    }
-  }, [open, acta]);
+  // El estado vigente sale del detalle (se actualiza al cerrar/reabrir)
+  const estado = detalle?.acta.estado ?? acta?.estado;
+  const enBorrador = estado === 'BORRADOR';
 
-  const fetchDetalle = async () => {
+  const cambiarEstado = (accion: 'cerrar' | 'reabrir') => {
     if (!acta) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await conciliacionApi.getActaDetalle(acta.id_acta);
-      setDetalle(data);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error cargando detalle';
-      setError(message);
-      console.error('Error fetching acta detalle:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    const mutation = accion === 'cerrar' ? cerrarMutation : reabrirMutation;
+    mutation.mutate(acta.id_acta, {
+      onSuccess: () =>
+        toast({
+          title: accion === 'cerrar' ? 'Acta cerrada' : 'Acta reabierta',
+          description: accion === 'cerrar'
+            ? 'Las partidas en tránsito quedaron congeladas.'
+            : 'El acta volvió a BORRADOR y se puede volver a conciliar.',
+          variant: 'success',
+        }),
+      onError: (e) => toast({ title: 'No se pudo cambiar el estado', description: e.message, variant: 'destructive' }),
+    });
   };
-
-  const getTotal = (partidas: PartidaTransito[]) =>
-    partidas.reduce((sum, p) => sum + (p.tipo === 'CREDITO' ? p.monto : -p.monto), 0);
-
-  const getTotalAbs = (partidas: PartidaTransito[]) =>
-    partidas.reduce((sum, p) => sum + Math.abs(p.monto), 0);
 
   if (!acta) return null;
 
@@ -84,7 +82,7 @@ export function PartidasTransitoDrawer({
                 Partidas en Tránsito — {acta.cuenta_contable || 'Acta'}
               </DrawerTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Período: {acta.periodo} • Estado: {acta.estado}
+                Período: {acta.periodo} • Estado: {estado}
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
@@ -149,8 +147,8 @@ export function PartidasTransitoDrawer({
                                   <MoneyFormat value={partida.monto} />
                                 </TableCell>
                                 <TableCell>
-                                  <Badge variant="secondary" className={cn(TIPO_CONFIG[partida.tipo].bg, 'text-xs')}>
-                                    {TIPO_CONFIG[partida.tipo].label}
+                                  <Badge variant="secondary" className={cn((TIPO_CONFIG[partida.tipo] ?? TIPO_CONFIG.CREDITO).bg, 'text-xs')}>
+                                    {(TIPO_CONFIG[partida.tipo] ?? { label: partida.tipo }).label}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -205,10 +203,10 @@ export function PartidasTransitoDrawer({
                                   {formatDate(partida.fecha)}
                                 </TableCell>
                                 <TableCell className="font-mono text-sm">
-                                  {partida.referencia || '—'}
+                                  {partida.entry_no ?? '—'}
                                 </TableCell>
                                 <TableCell className="font-mono text-sm">
-                                  {partida.concepto || '—'}
+                                  {partida.documento || partida.referencia || '—'}
                                 </TableCell>
                                 <TableCell className="max-w-xs truncate">{partida.concepto}</TableCell>
                                 <TableCell className="text-right font-mono tabular-nums">
@@ -268,12 +266,24 @@ export function PartidasTransitoDrawer({
           {onDownload && (
             <Button variant="outline" onClick={() => onDownload(acta)}>
               <Download className="h-4 w-4 mr-2" />
-              Exportar PDF
+              Descargar Excel
+            </Button>
+          )}
+          {puedeOperar && enBorrador && (
+            <Button variant="secondary" onClick={() => cambiarEstado('cerrar')} disabled={cerrarMutation.isPending}>
+              {cerrarMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
+              Cerrar acta
+            </Button>
+          )}
+          {esAdmin && estado && !enBorrador && (
+            <Button variant="secondary" onClick={() => cambiarEstado('reabrir')} disabled={reabrirMutation.isPending}>
+              {reabrirMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Unlock className="h-4 w-4 mr-2" />}
+              Reabrir acta
             </Button>
           )}
           <Button variant="default" onClick={() => onOpenChange(false)}>
             <ChevronRight className="h-4 w-4 mr-2" />
-            Cerrar
+            Salir
           </Button>
         </DrawerFooter>
       </DrawerContent>
@@ -281,8 +291,5 @@ export function PartidasTransitoDrawer({
   );
 }
 
-const getTotal = (partidas: PartidaTransito[]) =>
-  partidas.reduce((sum, p) => sum + (p.tipo === 'CREDITO' ? p.monto : -p.monto), 0);
-
-const getTotalAbs = (partidas: PartidaTransito[]) =>
-  partidas.reduce((sum, p) => sum + Math.abs(p.monto), 0);
+// Los montos ya vienen con signo: el total es la suma directa (neto)
+const getTotal = (partidas: PartidaTransito[]) => sumarMontos(partidas, (p) => p.monto);

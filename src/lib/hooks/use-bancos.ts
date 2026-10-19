@@ -13,6 +13,7 @@ import {
   SincronizarCatalogoResponse,
   CargaExtracto,
   CargaExtractoUpload,
+  CargaUploadResponse,
   MovimientoBancoPendiente,
   FiltrosCargas,
   PaginatedResponse,
@@ -21,10 +22,11 @@ import {
 export const bancosKeys = {
   all: ["bancos"] as const,
   cuentas: () => [...bancosKeys.all, "cuentas"] as const,
-  cargas: (filtros?: FiltrosCargas) =>
-    [...bancosKeys.all, "cargas", filtros] as const,
-  movimientosPendientes: (idCuenta: string) =>
-    [...bancosKeys.all, "movimientos", "pendientes", idCuenta] as const,
+  cargasAll: () => [...bancosKeys.all, "cargas"] as const,
+  cargas: (filtros?: FiltrosCargas) => [...bancosKeys.all, "cargas", filtros ?? {}] as const,
+  movimientosAll: () => [...bancosKeys.all, "movimientos"] as const,
+  movimientosPendientes: (idCuenta: string, fechaInicio = "", fechaFin = "") =>
+    [...bancosKeys.all, "movimientos", "pendientes", idCuenta, fechaInicio, fechaFin] as const,
 };
 
 export function useCuentasBancarias(
@@ -44,10 +46,11 @@ export function useCreateCuentaBancaria(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bancosApi.createCuenta,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
-    },
     ...options,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
+      (options?.onSuccess as any)?.(...args);
+    },
   });
 }
 
@@ -62,10 +65,11 @@ export function useUpdateCuentaBancaria(
   return useMutation({
     mutationFn: ({ idCuenta, payload }) =>
       bancosApi.updateCuenta(idCuenta, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
-    },
     ...options,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
+      (options?.onSuccess as any)?.(...args);
+    },
   });
 }
 
@@ -75,10 +79,11 @@ export function useSincronizarCatalogo(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bancosApi.sincronizarCatalogo,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
-    },
     ...options,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
+      (options?.onSuccess as any)?.(...args);
+    },
   });
 }
 
@@ -94,46 +99,24 @@ export function useCargasExtractos(
   });
 }
 
-export function useUploadExtracto(
-  options?: UseMutationOptions<CargaExtracto, Error, CargaExtractoUpload>,
-) {
+export function useUploadExtracto() {
   const queryClient = useQueryClient();
-  const { onSuccess, ...restOptions } = options || {};
-
-  return useMutation({
-    mutationFn: (payload: CargaExtractoUpload) => {
-      const emailResponsable =
-        payload.created_by || payload.creado_por || "operador@fabribat.com";
-
-      const cleanPayload: CargaExtractoUpload = {
-        ...payload,
-        created_by: emailResponsable,
-        creado_por: emailResponsable,
-      };
-
-      return bancosApi.uploadExtracto(cleanPayload);
+  return useMutation<CargaUploadResponse, Error, CargaExtractoUpload>({
+    mutationFn: (payload) => bancosApi.uploadExtracto(payload),
+    onSuccess: () => {
+      // Claves raíz: refresca TODAS las páginas/filtros del historial y los pendientes
+      queryClient.invalidateQueries({ queryKey: bancosKeys.cargasAll() });
+      queryClient.invalidateQueries({ queryKey: bancosKeys.movimientosAll() });
+      queryClient.invalidateQueries({ queryKey: ["conciliacion"] });
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: bancosKeys.cargas() });
-      queryClient.invalidateQueries({ queryKey: ["bancos", "movimientos"] });
-      if (onSuccess) {
-        (onSuccess as Function)(data, variables, context);
-      }
-    },
-    ...restOptions,
   });
 }
 
-export function useMovimientosPendientes(
-  idCuenta: string,
-  enabled = true,
-  options?: UseQueryOptions<MovimientoBancoPendiente[], Error>,
-) {
-  return useQuery({
-    queryKey: bancosKeys.movimientosPendientes(idCuenta),
-    queryFn: () => bancosApi.getMovimientosPendientes(idCuenta),
+export function useMovimientosPendientes(idCuenta: string, fechaInicio = "", fechaFin = "", enabled = true) {
+  return useQuery<MovimientoBancoPendiente[], Error>({
+    queryKey: bancosKeys.movimientosPendientes(idCuenta, fechaInicio, fechaFin),
+    queryFn: () => bancosApi.getMovimientosPendientes(idCuenta, fechaInicio, fechaFin),
     enabled: enabled && !!idCuenta,
     staleTime: 30 * 1000,
-    ...options,
   });
 }

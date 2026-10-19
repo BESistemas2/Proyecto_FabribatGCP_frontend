@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUsuarios } from "@/lib/hooks/use-usuarios";
+import { useDestinatarios } from "@/lib/hooks/use-usuarios";
 import { useEnviarReporteEmail } from "@/lib/hooks/use-conciliacion";
 import { useToast } from "@/lib/hooks/use-toast";
 import {
@@ -32,7 +32,7 @@ export function EnviarReporteModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
 
-  const { data: usuarios = [] } = useUsuarios();
+  const { data: usuarios = [] } = useDestinatarios();
   const enviarReporteMutation = useEnviarReporteEmail();
   const { toast } = useToast();
 
@@ -71,11 +71,11 @@ export function EnviarReporteModal({
       setSelectedIds([]);
       setComentario("");
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error al enviar",
         description:
-          error.response?.data?.detail || "No se pudo despachar el correo.",
+          error instanceof Error ? error.message : "No se pudo despachar el correo.",
         variant: "destructive",
       });
     }

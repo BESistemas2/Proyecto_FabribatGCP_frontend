@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Loader2,
@@ -23,14 +23,25 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useToast } from "@/lib/hooks/use-toast";
-import { authApi, CORPORATE_DOMAIN } from "@/lib/api/auth";
+import { CORPORATE_DOMAIN } from "@/lib/api/auth";
+import { redireccionSegura } from "@/lib/auth/session";
 import { GoogleButton } from "@/components/auth/google-button";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
+// useSearchParams exige un <Suspense> para poder generar la página en el build
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const destino = redireccionSegura(searchParams.get("redirect"));
 
   const { user, login, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -42,11 +53,8 @@ export default function LoginPage() {
   const expired = searchParams.get("expired") === "1";
 
   useEffect(() => {
-    if (user && !authLoading) {
-      const redirectUrl = searchParams.get("redirect") || "/workbench";
-      window.location.replace(redirectUrl);
-    }
-  }, [user, authLoading, searchParams]);
+    if (user && !authLoading) router.replace(destino);
+  }, [user, authLoading, destino, router]);
 
   useEffect(() => {
     if (expired) {
@@ -59,6 +67,11 @@ export default function LoginPage() {
   }, [expired, toast]);
 
   useEffect(() => {
+    // El SDK de Google se carga una sola vez aunque se vuelva a montar la página
+    if (window.google?.accounts?.id) {
+      setGoogleLoaded(true);
+      return;
+    }
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
@@ -94,8 +107,7 @@ export default function LoginPage() {
         variant: "success",
       });
 
-      const redirectUrl = searchParams.get("redirect") || "/workbench";
-      window.location.replace(redirectUrl);
+      router.replace(destino);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error desconocido";
       if (message.includes("dominio") || message.includes("domain")) {

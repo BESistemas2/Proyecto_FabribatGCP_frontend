@@ -1,80 +1,67 @@
-import axios from 'axios';
+import axios, { AxiosError } from "axios";
+import { leerSesion, limpiarSesion } from "@/lib/auth/session";
 
-export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 30000,
-  withCredentials: true,
-});
-
-// Initialize auth from storage on client side
-if (typeof window !== 'undefined') {
-  const storedToken = localStorage.getItem('fabribat_auth_token');
-  if (storedToken) {
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+/** Error de la API con el código HTTP y el detalle que devolvió FastAPI. */
+export class ApiError extends Error {
+  status?: number;
+  detail?: unknown;
+  constructor(message: string, status?: number, detail?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
   }
 }
 
-// Response interceptor for error handling and auth
+/** Convierte el `detail` de FastAPI (texto, objeto o lista de errores 422) en un mensaje legible. */
+function mensajeDeError(error: AxiosError<any>): string {
+  const detail = error.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d: any) => {
+        const campo = Array.isArray(d?.loc) ? d.loc.filter((p: any) => p !== "body").join(".") : "";
+        return campo ? `${campo}: ${d?.msg}` : d?.msg;
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
+  if (detail && typeof detail === "object") {
+    return (detail as any).error || (detail as any).detalle || JSON.stringify(detail);
+  }
+  if (error.code === "ECONNABORTED") return "El servidor tardó demasiado en responder.";
+  if (!error.response) return "No se pudo conectar con el servidor.";
+  return error.message || "Error inesperado";
+}
+
+export const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1",
+  headers: { "Content-Type": "application/json" },
+  timeout: 30000,
+});
+
+// El token se toma en cada petición (siempre el vigente, sin estado global duplicado)
+apiClient.interceptors.request.use((config) => {
+  const { token } = leerSesion();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    const message = error.response?.data?.detail || error.message || 'Error inesperado de red';
+  (error: AxiosError<any>) => {
+    const status = error.response?.status;
+    const message = mensajeDeError(error);
 
-    // Handle 401 Unauthorized - clear session and redirect to login
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('fabribat_auth_token');
-        localStorage.removeItem('fabribat_auth_user');
-        delete apiClient.defaults.headers.common['Authorization'];
-        // Use replace to avoid history stack issues
-        window.location.replace('/login?expired=1');
+    // Sesión vencida o usuario desactivado: limpiar todo y volver al login (una sola vez)
+    if (status === 401 && typeof window !== "undefined") {
+      limpiarSesion();
+      if (!window.location.pathname.startsWith("/login")) {
+        const volver = encodeURIComponent(window.location.pathname);
+        window.location.replace(`/login?expired=1&redirect=${volver}`);
       }
     }
 
-    // Handle 403 Forbidden - token may be valid but insufficient permissions
-    if (error.response?.status === 403) {
-      if (typeof window !== 'undefined') {
-        // Could redirect to an unauthorized page or show toast
-        // For now, just log and let the error propagate
-      }
-    }
-
-    console.error('API Error:', message);
-    return Promise.reject(
-      new Error(typeof message === 'object' ? JSON.stringify(message) : message)
-    );
-  }
+    return Promise.reject(new ApiError(message, status, error.response?.data?.detail));
+  },
 );
-
-/**
- * Set the auth token in axios defaults and localStorage
- */
-export const setAuthToken = (token: string | null) => {
-  if (token) {
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('fabribat_auth_token', token);
-    }
-  } else {
-    delete apiClient.defaults.headers.common['Authorization'];
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('fabribat_auth_token');
-    }
-  }
-};
-
-/**
- * Initialize auth from localStorage on client-side
- * Call this once during app initialization (e.g., in AuthProvider)
- */
-export const initializeAuthFromStorage = () => {
-  if (typeof window !== 'undefined') {
-    const storedToken = localStorage.getItem('fabribat_auth_token');
-    if (storedToken) {
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-    }
-  }
-};
