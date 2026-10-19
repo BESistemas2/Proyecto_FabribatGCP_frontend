@@ -41,47 +41,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { CrearUsuarioModal } from "@/components/admin/crear-usuario-modal";
-
-interface Usuario {
-  id_usuario: string;
-  email: string;
-  nombre: string;
-  rol: "ADMIN" | "BASICO" | "CONTABILIDAD" | "RECEPTOR_MAIL";
-  activo: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-const ROL_CONFIG: Record<
-  "ADMIN" | "BASICO" | "CONTABILIDAD" | "RECEPTOR_MAIL",
-  {
-    label: string;
-    variant: "default" | "secondary" | "destructive" | "outline";
-    color: string;
-  }
-> = {
-  ADMIN: {
-    label: "Administrador",
-    variant: "destructive",
-    color:
-      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-  },
-  CONTABILIDAD: {
-    label: "Contabilidad",
-    variant: "outline",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  },
-  BASICO: {
-    label: "Básico",
-    variant: "secondary",
-    color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  },
-  RECEPTOR_MAIL: {
-    label: "Básico",
-    variant: "secondary",
-    color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  },
-};
+import { ROLES, ROL_INFO, getRolInfo, type RolUsuario, type Usuario } from "@/types/identity";
 
 function UsuarioRow({
   usuario,
@@ -90,11 +50,9 @@ function UsuarioRow({
 }: {
   usuario: Usuario;
   onToggleActivo: (id: string, checked: boolean) => void;
-  onCambiarRol: (
-    id: string,
-    rol: "ADMIN" | "BASICO" | "CONTABILIDAD" | "RECEPTOR_MAIL",
-  ) => void;
+  onCambiarRol: (id: string, rol: RolUsuario) => void;
 }) {
+  const rolInfo = getRolInfo(usuario.rol);
   return (
     <TableRow className={!usuario.activo ? "opacity-50" : "hover:bg-muted/50"}>
       <TableCell className="font-medium">
@@ -114,13 +72,10 @@ function UsuarioRow({
       </TableCell>
       <TableCell>
         <Badge
-          variant={ROL_CONFIG[usuario.rol].variant}
-          className={cn(
-            "gap-1 px-2 py-1 text-xs",
-            ROL_CONFIG[usuario.rol].color,
-          )}
+          variant={rolInfo.badge}
+          className={cn("gap-1 px-2 py-1 text-xs", rolInfo.color)}
         >
-          {ROL_CONFIG[usuario.rol].label}
+          {rolInfo.label}
         </Badge>
       </TableCell>
       <TableCell>
@@ -154,27 +109,20 @@ function UsuarioRow({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onCambiarRol(usuario.id_usuario, "ADMIN")}
-              disabled={usuario.rol === "ADMIN"}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Hacer Administrador
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onCambiarRol(usuario.id_usuario, "CONTABILIDAD")}
-              disabled={usuario.rol === "CONTABILIDAD"}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Hacer Tesorero
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onCambiarRol(usuario.id_usuario, "BASICO")}
-              disabled={usuario.rol === "BASICO"}
-            >
-              <UserCog className="h-4 w-4 mr-2" />
-              Hacer Analista
-            </DropdownMenuItem>
+            {ROLES.map((rol) => (
+              <DropdownMenuItem
+                key={rol}
+                onClick={() => onCambiarRol(usuario.id_usuario, rol)}
+                disabled={usuario.rol === rol}
+              >
+                {rol === "ADMIN" ? (
+                  <Shield className="h-4 w-4 mr-2" />
+                ) : (
+                  <UserCog className="h-4 w-4 mr-2" />
+                )}
+                Asignar rol: {ROL_INFO[rol].label}
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>
@@ -207,7 +155,7 @@ export default function UsuariosAdminPage() {
 
   const esAdmin = user?.rol === "ADMIN";
 
-  const { data: usuarios, isLoading } = useUsuarios();
+  const { data: usuarios, isLoading } = useUsuarios({ enabled: esAdmin });
   const updateEstadoMutation = useUpdateUsuarioEstado();
   const updateRolMutation = useUpdateUsuarioRol();
 
@@ -252,7 +200,7 @@ export default function UsuariosAdminPage() {
 
   const handleCambiarRol = async (
     idUsuario: string,
-    nuevoRol: "ADMIN" | "BASICO" | "CONTABILIDAD" | "RECEPTOR_MAIL",
+    nuevoRol: RolUsuario,
   ) => {
     try {
       await updateRolMutation.mutateAsync({

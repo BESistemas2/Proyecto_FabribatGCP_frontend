@@ -34,16 +34,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/lib/hooks/use-toast";
 import { useCreateUsuario } from "@/lib/hooks/use-usuarios";
+import { ROLES, ROL_INFO } from "@/types/identity";
 
 const crearUsuarioSchema = z.object({
   email: z
     .string()
     .email("Correo electrónico inválido")
-    .refine((val) => val.endsWith("@bateriasecuador.com"), {
+    .refine((val) => val.toLowerCase().endsWith("@bateriasecuador.com"), {
       message: "Solo se permiten correos corporativos @bateriasecuador.com",
     }),
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  rol: z.enum(["ADMIN", "ANALISTA", "TESORERO"], {
+  rol: z.enum(ROLES, {
     errorMap: () => ({ message: "Seleccione un rol válido" }),
   }),
 });
@@ -55,17 +56,6 @@ interface CrearUsuarioModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const ROL_LABELS: Record<string, string> = {
-  ADMIN: "Administrador",
-  TESORERO: "Tesorero",
-  ANALISTA: "Analista",
-};
-
-const ROL_DESCRIPTIONS: Record<string, string> = {
-  ADMIN: "Acceso total al sistema, gestión de usuarios y configuración.",
-  TESORERO: "Gestión de conciliaciones, reportes y operaciones de tesorería.",
-  ANALISTA: "Consulta y análisis de datos, generación de reportes.",
-};
 
 export function CrearUsuarioModal({
   open,
@@ -80,7 +70,7 @@ export function CrearUsuarioModal({
     defaultValues: {
       email: "",
       nombre: "",
-      rol: "ANALISTA",
+      rol: "BASICO",
     },
     mode: "onBlur",
   });
@@ -94,7 +84,7 @@ export function CrearUsuarioModal({
           "El usuario ha sido agregado a la Allowlist correctamente.",
         variant: "success",
       });
-      form.reset({ email: "", nombre: "", rol: "ANALISTA" });
+      form.reset({ email: "", nombre: "", rol: "BASICO" });
       onOpenChange(false);
     } catch (error) {
       toast({
@@ -209,12 +199,12 @@ export function CrearUsuarioModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(ROL_LABELS).map(([value, label]) => (
+                      {ROLES.map((value) => (
                         <SelectItem key={value} value={value}>
                           <div className="flex flex-col gap-0.5 py-1">
-                            <span className="font-medium">{label}</span>
+                            <span className="font-medium">{ROL_INFO[value].label}</span>
                             <span className="text-xs text-muted-foreground">
-                              {ROL_DESCRIPTIONS[value]}
+                              {ROL_INFO[value].descripcion}
                             </span>
                           </div>
                         </SelectItem>

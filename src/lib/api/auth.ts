@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { RolUsuario } from "@/types/identity";
 
 export interface GoogleLoginRequest {
   id_token: string;
@@ -10,7 +11,7 @@ export interface AuthUser {
   name: string;
   picture?: string;
   domain: string;
-  rol: "ADMIN" | "ANALISTA" | "TESORERO"; // 👈 Añadido: vital para control de acceso
+  rol: RolUsuario;
 }
 
 export interface GoogleLoginResponse {

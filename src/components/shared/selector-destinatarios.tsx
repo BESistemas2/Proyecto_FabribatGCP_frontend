@@ -18,7 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { useUsuarios } from "@/lib/hooks/use-usuarios";
+import { useDestinatarios } from "@/lib/hooks/use-usuarios";
+import { getRolInfo } from "@/types/identity";
 
 interface SelectorDestinatariosProps {
   value: string[];
@@ -26,13 +27,6 @@ interface SelectorDestinatariosProps {
   disabled?: boolean;
 }
 
-// Colores visuales para diferenciar roles rápidamente
-const ROL_COLORS: Record<string, string> = {
-  ADMIN: "bg-red-100 text-red-800 border-red-200",
-  CONTABILIDAD: "bg-blue-100 text-blue-800 border-blue-200",
-  BASICO: "bg-gray-100 text-gray-800 border-gray-200",
-  RECEPTOR_MAIL: "bg-green-100 text-green-800 border-green-200",
-};
 
 export function SelectorDestinatarios({
   value = [],
@@ -41,11 +35,8 @@ export function SelectorDestinatarios({
 }: SelectorDestinatariosProps) {
   const [open, setOpen] = React.useState(false);
 
-  // Consumimos el hook real que ya tenías
-  const { data: usuarios = [], isLoading } = useUsuarios();
-
-  // Filtrar solo usuarios activos
-  const usuariosActivos = usuarios.filter((u) => u.activo);
+  // Usuarios activos (el backend ya filtra); no requiere rol ADMIN
+  const { data: usuariosActivos = [], isLoading } = useDestinatarios();
 
   // Mapear los IDs seleccionados a objetos de usuario completos
   const selectedUsers = usuariosActivos.filter((u) =>
@@ -84,7 +75,7 @@ export function SelectorDestinatarios({
                     variant="secondary"
                     className={cn(
                       "mr-1 mb-1 flex items-center gap-1 font-normal",
-                      ROL_COLORS[user.rol] || "bg-gray-100",
+                      getRolInfo(user.rol).color,
                     )}
                   >
                     <span className="text-[10px] font-bold opacity-70">
@@ -158,7 +149,7 @@ export function SelectorDestinatarios({
                           <span
                             className={cn(
                               "px-1 rounded-sm text-[9px] font-bold uppercase",
-                              ROL_COLORS[user.rol] || "bg-gray-200",
+                              getRolInfo(user.rol).color,
                             )}
                           >
                             {user.rol}

@@ -2,11 +2,11 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-  UseQueryOptions,
   UseMutationOptions,
 } from "@tanstack/react-query";
 import { identidadApi } from "@/lib/api/identidad";
 import {
+  Destinatario,
   Usuario,
   UsuarioCreate,
   UsuarioUpdateEstado,
@@ -16,16 +16,25 @@ import {
 export const usuariosKeys = {
   all: ["usuarios"] as const,
   list: () => [...usuariosKeys.all, "list"] as const,
+  destinatarios: () => [...usuariosKeys.all, "destinatarios"] as const,
 };
 
-export function useUsuarios(
-  options?: UseQueryOptions<Usuario[], Error>
-) {
-  return useQuery({
+/** Usuarios activos que pueden recibir reportes (no requiere rol ADMIN). */
+export function useDestinatarios() {
+  return useQuery<Destinatario[], Error>({
+    queryKey: usuariosKeys.destinatarios(),
+    queryFn: identidadApi.getDestinatarios,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Lista completa de usuarios (solo ADMIN). */
+export function useUsuarios({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery<Usuario[], Error>({
     queryKey: usuariosKeys.list(),
     queryFn: identidadApi.getUsuarios,
     staleTime: 5 * 60 * 1000,
-    ...options,
+    enabled,
   });
 }
 
@@ -36,7 +45,7 @@ export function useCreateUsuario(
   return useMutation({
     mutationFn: identidadApi.createUsuario,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.list() });
+      queryClient.invalidateQueries({ queryKey: usuariosKeys.all });
     },
     ...options,
   });
@@ -54,7 +63,7 @@ export function useUpdateUsuarioEstado(
     mutationFn: ({ idUsuario, payload }) =>
       identidadApi.updateEstado(idUsuario, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.list() });
+      queryClient.invalidateQueries({ queryKey: usuariosKeys.all });
     },
     ...options,
   });
@@ -64,7 +73,7 @@ export function useUpdateUsuarioRol(
   options?: UseMutationOptions<
     Usuario,
     Error,
-    { idUsuario: string; payload: { rol: string } }
+    { idUsuario: string; payload: UsuarioUpdateRol }
   >
 ) {
   const queryClient = useQueryClient();
@@ -72,7 +81,7 @@ export function useUpdateUsuarioRol(
     mutationFn: ({ idUsuario, payload }) =>
       identidadApi.updateRol(idUsuario, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.list() });
+      queryClient.invalidateQueries({ queryKey: usuariosKeys.all });
     },
     ...options,
   });
