@@ -1,0 +1,19 @@
+# Dependencias y builds
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Variables de entorno (nunca a git)
+.env
+.env.local
+.env.*.local
+stack.env
+
+# Varios
+.DS_Store
+*.log
+.vscode/
+.idea/

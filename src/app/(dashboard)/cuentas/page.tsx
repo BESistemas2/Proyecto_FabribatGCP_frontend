@@ -1,0 +1,249 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import {
+  Building2,
+  RotateCcw,
+  Zap,
+  CheckCircle,
+  Settings,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CuentasGrid } from "@/components/cuentas/cuentas-grid";
+import { CuentaConfigDrawer } from "@/components/cuentas/cuenta-config-drawer";
+import {
+  useCuentasBancarias,
+  useUpdateCuentaBancaria,
+  useSincronizarCatalogo,
+} from "@/lib/hooks/use-bancos";
+import { useToast } from "@/lib/hooks/use-toast";
+import { CuentaBancaria } from "@/types/bancos";
+import { cn } from "@/lib/utils/cn";
+
+export default function CuentasPage() {
+  const { toast } = useToast();
+
+  const {
+    data: cuentas,
+    isLoading: cuentasLoading,
+    refetch: refetchCuentas,
+  } = useCuentasBancarias();
+  const updateMutation = useUpdateCuentaBancaria();
+  const sincronizarMutation = useSincronizarCatalogo();
+
+  const [selectedCuenta, setSelectedCuenta] = useState<CuentaBancaria | null>(
+    null,
+  );
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleConfigClick = useCallback((cuenta: CuentaBancaria) => {
+    setSelectedCuenta(cuenta);
+    setDrawerOpen(true);
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    setSelectedCuenta(null);
+  }, []);
+
+  const handleRpaToggle = async (idCuenta: string, enabled: boolean) => {
+    try {
+      await updateMutation.mutateAsync({
+        idCuenta,
+        payload: { rpa_habilitado: enabled },
+      });
+      toast({
+        title: enabled ? "RPA activado" : "RPA desactivado",
+        description: `La descarga automática ha sido ${enabled ? "habilitada" : "deshabilitada"}`,
+        variant: "success",
+      });
+      refetchCuentas();
+    } catch (error) {
+      toast({
+        title: "Error al actualizar RPA",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+      refetchCuentas(); // Revertir UI
+    }
+  };
+
+  const handleAutoMatchToggle = async (idCuenta: string, enabled: boolean) => {
+    try {
+      await updateMutation.mutateAsync({
+        idCuenta,
+        payload: { auto_match_habilitado: enabled },
+      });
+      toast({
+        title: enabled ? "Auto-Match activado" : "Auto-Match desactivado",
+        description: `La conciliación automática ha sido ${enabled ? "habilitada" : "deshabilitada"}`,
+        variant: "success",
+      });
+      refetchCuentas();
+    } catch (error) {
+      toast({
+        title: "Error al actualizar Auto-Match",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+      refetchCuentas(); // Revertir UI
+    }
+  };
+
+  const handleSyncClick = async () => {
+    try {
+      const result = await sincronizarMutation.mutateAsync();
+      toast({
+        title: "Catálogo sincronizado",
+        description: `${result.cuentas_nuevas} cuentas nuevas, ${result.cuentas_actualizadas} actualizadas`,
+        variant: "success",
+      });
+      refetchCuentas();
+    } catch (error) {
+      toast({
+        title: "Error sincronizando",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isAnyLoading =
+    cuentasLoading || updateMutation.isPending || sincronizarMutation.isPending;
+
+  return (
+    <div className="flex flex-col gap-6 h-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Catálogo de Cuentas Bancarias
+          </h1>
+          <p className="text-muted-foreground">
+            Gestión de cuentas sincronizadas desde Dynamics 365 BC
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => refetchCuentas()}
+            disabled={cuentasLoading}
+          >
+            <RotateCcw
+              className={cn("h-4 w-4 mr-2", cuentasLoading && "animate-spin")}
+            />
+            Actualizar
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Building2 className="h-5 w-5 text-primary" />
+              Total Cuentas
+              <Badge variant="secondary" className="ml-2">
+                {cuentas?.length || 0}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums">
+              {cuentas?.length || 0}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Zap className="h-5 w-5 text-blue-500" />
+              RPA Habilitado
+              <Badge variant="secondary" className="ml-2">
+                {cuentas?.filter((c) => c.rpa_habilitado).length || 0}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums text-blue-600">
+              {cuentas?.filter((c) => c.rpa_habilitado).length || 0}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CheckCircle className="h-5 w-5 text-purple-500" />
+              Auto-Match Activo
+              <Badge variant="secondary" className="ml-2">
+                {cuentas?.filter((c) => c.auto_match_habilitado).length || 0}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums text-purple-600">
+              {cuentas?.filter((c) => c.auto_match_habilitado).length || 0}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {!cuentasLoading && cuentas && cuentas.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">
+              No hay cuentas bancarias configuradas
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              El catálogo se obtiene sincronizando desde Dynamics 365 Business
+              Central. Las cuentas no se crean manualmente en esta interfaz.
+            </p>
+            <Button
+              onClick={handleSyncClick}
+              disabled={sincronizarMutation.isPending}
+              size="lg"
+              className="gap-2"
+            >
+              {sincronizarMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" />
+                  Sincronizar Catálogo Ahora
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <CuentasGrid
+          cuentas={cuentas || []}
+          isLoading={cuentasLoading}
+          isSyncing={sincronizarMutation.isPending}
+          onConfigClick={handleConfigClick}
+          onRpaToggle={handleRpaToggle}
+          onAutoMatchToggle={handleAutoMatchToggle}
+          onSyncClick={handleSyncClick}
+        />
+      )}
+
+      <CuentaConfigDrawer
+        cuenta={selectedCuenta}
+        open={drawerOpen}
+        onOpenChange={handleCloseDrawer}
+      />
+    </div>
+  );
+}

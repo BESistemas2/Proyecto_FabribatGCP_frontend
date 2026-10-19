@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  fabribat-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fabribat_frontend_prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Aquí colocas las variables de entorno que tu frontend necesite en producción
+      - NEXT_PUBLIC_API_URL=http://tu_ip_del_backend:8000/api/v1
