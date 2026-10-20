@@ -19,9 +19,10 @@ services:
     image: fabribat-frontend:latest
     container_name: fabribat-frontend
     restart: unless-stopped
-    # Solo accesible desde la propia VM; el público entra por Traefik
-    ports:
-      - "127.0.0.1:3000:3000"
+    # Sin puertos publicados en la VM: solo Traefik llega al contenedor por la red Docker.
+    # (Para depurar desde la VM: docker exec, o descomentar con un puerto libre)
+    # ports:
+    #   - "127.0.0.1:13000:3000"
     networks:
       - traefik
     labels:
