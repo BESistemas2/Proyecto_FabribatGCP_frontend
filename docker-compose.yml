@@ -17,6 +17,8 @@ services:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?Defina NEXT_PUBLIC_API_BASE_URL}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:?Defina NEXT_PUBLIC_GOOGLE_CLIENT_ID}
     image: fabribat-frontend:latest
+    # La imagen se construye en la VM, no existe en Docker Hub: nunca intentar descargarla
+    pull_policy: build
     container_name: fabribat-frontend
     restart: unless-stopped
     # Sin puertos publicados en la VM: solo Traefik llega al contenedor por la red Docker.
