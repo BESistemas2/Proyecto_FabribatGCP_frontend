@@ -5,9 +5,9 @@
 #
 # Publicación con el Traefik existente en la VM (https://DOMINIO/).
 #   DOMINIO               ej. conciliacion.fabribat.com
-#   TRAEFIK_NETWORK       red Docker donde está Traefik      (por defecto: traefik)
+#   TRAEFIK_NETWORK       red Docker donde está Traefik      (por defecto: web-network)
 #   TRAEFIK_ENTRYPOINT    entrypoint HTTPS de Traefik        (por defecto: websecure)
-#   TRAEFIK_CERTRESOLVER  certresolver de Let's Encrypt      (por defecto: letsencrypt)
+#   TRAEFIK_CERTRESOLVER  certresolver de Let's Encrypt      (por defecto: myresolver)
 services:
   fabribat-frontend:
     build:
@@ -26,11 +26,11 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=${TRAEFIK_NETWORK:-traefik}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-web-network}"
       - "traefik.http.routers.fabribat-web.rule=Host(`${DOMINIO:?Defina DOMINIO}`)"
       - "traefik.http.routers.fabribat-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
       - "traefik.http.routers.fabribat-web.tls=true"
-      - "traefik.http.routers.fabribat-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.routers.fabribat-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-myresolver}"
       - "traefik.http.services.fabribat-web.loadbalancer.server.port=3000"
     logging:
       driver: json-file
@@ -41,4 +41,4 @@ services:
 networks:
   traefik:
     external: true
-    name: ${TRAEFIK_NETWORK:-traefik}
+    name: ${TRAEFIK_NETWORK:-web-network}
