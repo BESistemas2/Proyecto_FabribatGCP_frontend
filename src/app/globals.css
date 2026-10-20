@@ -82,12 +82,6 @@
   .text-balance {
     text-wrap: balance;
   }
-  .animate-in {
-    animation: fade-in 0.2s ease-out;
-  }
-  .animate-out {
-    animation: fade-out 0.2s ease-out;
-  }
 }
 
 @layer components {
