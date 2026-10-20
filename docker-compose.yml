@@ -13,10 +13,17 @@ services:
     image: fabribat-frontend:latest
     container_name: fabribat-frontend
     restart: unless-stopped
+    # Solo accesible desde la propia VM; el público entra por el proxy (deploy/proxy)
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+    networks:
+      - fabribat
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "5"
+
+networks:
+  fabribat:
+    external: true
