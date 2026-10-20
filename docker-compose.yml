@@ -2,6 +2,12 @@
 # Define en el stack las variables NEXT_PUBLIC_API_BASE_URL y NEXT_PUBLIC_GOOGLE_CLIENT_ID:
 # Portainer las sustituye abajo y se usan al CONSTRUIR la imagen (Next las fija en el build).
 # Si cambian, hay que reconstruir la imagen ("Re-pull and redeploy" / "Build").
+#
+# Publicación con el Traefik existente en la VM (https://DOMINIO/).
+#   DOMINIO               ej. conciliacion.fabribat.com
+#   TRAEFIK_NETWORK       red Docker donde está Traefik      (por defecto: traefik)
+#   TRAEFIK_ENTRYPOINT    entrypoint HTTPS de Traefik        (por defecto: websecure)
+#   TRAEFIK_CERTRESOLVER  certresolver de Let's Encrypt      (por defecto: letsencrypt)
 services:
   fabribat-frontend:
     build:
@@ -13,11 +19,19 @@ services:
     image: fabribat-frontend:latest
     container_name: fabribat-frontend
     restart: unless-stopped
-    # Solo accesible desde la propia VM; el público entra por el proxy (deploy/proxy)
+    # Solo accesible desde la propia VM; el público entra por Traefik
     ports:
       - "127.0.0.1:3000:3000"
     networks:
-      - fabribat
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-traefik}"
+      - "traefik.http.routers.fabribat-web.rule=Host(`${DOMINIO:?Defina DOMINIO}`)"
+      - "traefik.http.routers.fabribat-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.fabribat-web.tls=true"
+      - "traefik.http.routers.fabribat-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.services.fabribat-web.loadbalancer.server.port=3000"
     logging:
       driver: json-file
       options:
@@ -25,5 +39,6 @@ services:
         max-file: "5"
 
 networks:
-  fabribat:
+  traefik:
     external: true
+    name: ${TRAEFIK_NETWORK:-traefik}
