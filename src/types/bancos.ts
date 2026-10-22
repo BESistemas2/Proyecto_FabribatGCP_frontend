@@ -20,6 +20,8 @@ export interface CuentaBancaria {
   /** Nombre real del campo en el backend */
   auto_match_hora?: string | null;
   auto_match_intervalo_minutos?: number;
+  /** Enviar el informe por correo (RECEPTOR_MAIL y CONTABILIDAD) tras el Auto-Match programado */
+  auto_match_enviar_correo?: boolean;
   activo?: boolean;
   grupo_registro_bc?: string | null;
   codigo_banco_bc?: string;
@@ -52,6 +54,7 @@ export interface CuentaBancariaUpdate {
   auto_match_frecuencia?: "DIARIA" | "SEMANAL" | "MENSUAL";
   auto_match_hora_ejecucion?: string;
   auto_match_intervalo_minutos?: number;
+  auto_match_enviar_correo?: boolean;
 }
 
 export interface SincronizarCatalogoResponse {

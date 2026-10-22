@@ -57,6 +57,7 @@ const configSchema = z.object({
     .number()
     .min(15, "Mínimo 15 minutos")
     .max(1440, "Máximo 1440 minutos (24h)"),
+  auto_match_enviar_correo: z.boolean(),
   activo: z.boolean(),
 });
 
@@ -124,6 +125,7 @@ export function CuentaConfigDrawer({
       auto_match_frecuencia: "DIARIA",
       auto_match_hora_ejecucion: DEFAULT_AUTO_MATCH_HORA,
       auto_match_intervalo_minutos: DEFAULT_INTERVALO,
+      auto_match_enviar_correo: true,
       activo: true,
     },
     mode: "onBlur",
@@ -146,6 +148,7 @@ export function CuentaConfigDrawer({
           cuenta.auto_match_intervalo_minutos ??
           cuenta.rpa_intervalo_minutos ??
           DEFAULT_INTERVALO,
+        auto_match_enviar_correo: cuenta.auto_match_enviar_correo ?? true,
         activo: cuenta.activo ?? true,
       });
     }
@@ -164,6 +167,7 @@ export function CuentaConfigDrawer({
       // el backend llama a este campo auto_match_hora (antes se perdía)
       auto_match_hora: data.auto_match_hora_ejecucion,
       auto_match_intervalo_minutos: data.auto_match_intervalo_minutos,
+      auto_match_enviar_correo: data.auto_match_enviar_correo,
       activo: data.activo,
     };
 
@@ -509,6 +513,27 @@ export function CuentaConfigDrawer({
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="auto_match_enviar_correo"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <FormLabel>Enviar informe por correo</FormLabel>
+                        <FormDescription>
+                          Tras el Auto-Match programado, envía el informe Excel a los usuarios activos con rol
+                          Contabilidad o Receptor de correo, solo si hubo cruces nuevos (o un aviso si falló).
+                        </FormDescription>
+                      </div>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting || !autoMatchHabilitado}
+                      />
+                    </FormItem>
+                  )}
+                />
+
                 {autoMatchHabilitado && (
                   <div className="space-y-1 rounded-md border bg-muted/60 p-3 text-xs text-foreground">
                     <p>

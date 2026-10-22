@@ -138,7 +138,7 @@ export function CuentaCard({
             icono={<CheckCircle className="h-4 w-4 text-primary" />}
             fondo="bg-primary/10"
             titulo="Auto-Match"
-            descripcion={cuenta.auto_match_habilitado ? `${describirFrecuencia(cuenta)} y tras cada carga` : 'Solo manual'}
+            descripcion={cuenta.auto_match_habilitado ? `${describirFrecuencia(cuenta)} y tras cada carga${cuenta.auto_match_enviar_correo === false ? '' : ' · envía correo'}` : 'Solo manual'}
             checked={cuenta.auto_match_habilitado}
             disabled={autoMatchLoading || isUpdating}
             onChange={(v) => toggle(() => onAutoMatchToggle(cuenta.id_cuenta, v), setAutoMatchLoading)}
