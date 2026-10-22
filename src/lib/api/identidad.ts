@@ -4,8 +4,9 @@ import {
   Usuario,
   UsuarioCreate,
   UsuarioUpdateEstado,
+  SugerenciaUsuario,
+  UsuarioUpdate,
   UsuarioUpdateRol,
-  UsuariosResponse,
 } from "@/types/identity";
 
 export const identidadApi = {
@@ -33,6 +34,17 @@ export const identidadApi = {
       `/identidad/usuarios/${idUsuario}/estado`,
       payload
     );
+    return data;
+  },
+
+  updateUsuario: async (idUsuario: string, payload: UsuarioUpdate): Promise<Usuario> => {
+    const { data } = await apiClient.put<Usuario>(`/identidad/usuarios/${idUsuario}`, payload);
+    return data;
+  },
+
+  /** Nombre sugerido para un correo (registro existente, Google Workspace o deducido del correo) */
+  getSugerencia: async (email: string): Promise<SugerenciaUsuario> => {
+    const { data } = await apiClient.get<SugerenciaUsuario>("/identidad/usuarios/sugerencia", { params: { email } });
     return data;
   },
 

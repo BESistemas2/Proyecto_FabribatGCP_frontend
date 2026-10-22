@@ -83,6 +83,22 @@ export interface UsuarioUpdateRol {
   rol: RolUsuario;
 }
 
+/** PUT /identidad/usuarios/{id}: solo los campos enviados */
+export interface UsuarioUpdate {
+  email?: string;
+  nombre?: string;
+  rol?: RolUsuario;
+  activo?: boolean;
+}
+
+/** GET /identidad/usuarios/sugerencia?email= */
+export interface SugerenciaUsuario {
+  email: string;
+  nombre: string | null;
+  origen: "registrado" | "google" | "correo" | null;
+  ya_registrado: boolean;
+}
+
 export interface UsuariosResponse {
   data: Usuario[];
   total: number;

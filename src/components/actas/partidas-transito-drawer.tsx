@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MoneyFormat } from '@/components/shared/money-format';
 import { formatDate, sumarMontos } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
+import { RuleBadge } from '@/components/workbench/rule-badge';
 import { ResultadoConciliacionResponse } from '@/types/conciliacion';
 import type { PartidaTransito } from '@/types/conciliacion';
 import { useActaDetalle, useCerrarActa, useReabrirActa } from '@/lib/hooks/use-conciliacion';
@@ -107,9 +107,9 @@ export function PartidasTransitoDrawer({
               </Button>
             </div>
           ) : detalle ? (
-            <div className="flex flex-col h-full p-4">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'banco' | 'erp')} className="flex-1 flex flex-col">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
+            <div className="flex h-full min-h-0 flex-col p-4">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'banco' | 'erp')} className="flex min-h-0 flex-1 flex-col">
+                <TabsList className="grid w-full shrink-0 grid-cols-2 mb-4">
                   <TabsTrigger value="banco">
                     <FileText className="h-4 w-4 mr-2" />
                     Banco ({detalle.partidas_transito_banco?.length || 0})
@@ -120,10 +120,10 @@ export function PartidasTransitoDrawer({
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="banco" className="flex-1 flex flex-col min-h-0">
+                <TabsContent value="banco" className="mt-0 min-h-0 flex-1 flex-col data-[state=active]:flex data-[state=inactive]:hidden">
                   {detalle.partidas_transito_banco && detalle.partidas_transito_banco.length > 0 ? (
                     <div className="flex-1 flex flex-col min-h-0">
-                      <ScrollArea className="flex-1">
+                      <div className="min-h-0 flex-1 overflow-auto rounded-md border">
                         <Table>
                           <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur">
                             <TableRow>
@@ -152,17 +152,13 @@ export function PartidasTransitoDrawer({
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  {partida.regla_cruce && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {partida.regla_cruce}
-                                    </Badge>
-                                  )}
+                                  {partida.regla_cruce && <RuleBadge regla={partida.regla_cruce} variant="compact" />}
                                 </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                      </ScrollArea>
+                      </div>
                       <Separator className="my-3" />
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
@@ -181,16 +177,15 @@ export function PartidasTransitoDrawer({
                   )}
                 </TabsContent>
 
-                <TabsContent value="erp" className="flex-1 flex flex-col min-h-0">
+                <TabsContent value="erp" className="mt-0 min-h-0 flex-1 flex-col data-[state=active]:flex data-[state=inactive]:hidden">
                   {detalle.partidas_transito_erp && detalle.partidas_transito_erp.length > 0 ? (
                     <div className="flex-1 flex flex-col min-h-0">
-                      <ScrollArea className="flex-1">
+                      <div className="min-h-0 flex-1 overflow-auto rounded-md border">
                         <Table>
                           <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur">
                             <TableRow>
                               <TableHead className="w-24">Fecha</TableHead>
-                              <TableHead className="w-28">Entry No.</TableHead>
-                              <TableHead className="w-32">Doc. No.</TableHead>
+                              <TableHead className="w-40">Documento</TableHead>
                               <TableHead>Descripción</TableHead>
                               <TableHead className="w-28 text-right">Monto</TableHead>
                               <TableHead className="w-36">Regla</TableHead>
@@ -202,28 +197,27 @@ export function PartidasTransitoDrawer({
                                 <TableCell className="font-mono text-sm whitespace-nowrap">
                                   {formatDate(partida.fecha)}
                                 </TableCell>
-                                <TableCell className="font-mono text-sm">
-                                  {partida.entry_no ?? '—'}
-                                </TableCell>
-                                <TableCell className="font-mono text-sm">
-                                  {partida.documento || partida.referencia || '—'}
+                                <TableCell
+                                  className="font-mono text-sm"
+                                  title={partida.entry_no != null ? `Entry No.: ${partida.entry_no}` : undefined}
+                                >
+                                  <p className="whitespace-nowrap">{partida.documento || partida.referencia || '—'}</p>
+                                  {partida.documento && partida.referencia && partida.referencia !== partida.documento && (
+                                    <p className="whitespace-nowrap text-xs text-muted-foreground">Ext.: {partida.referencia}</p>
+                                  )}
                                 </TableCell>
                                 <TableCell className="max-w-xs truncate">{partida.concepto}</TableCell>
                                 <TableCell className="text-right font-mono tabular-nums">
                                   <MoneyFormat value={partida.monto} />
                                 </TableCell>
                                 <TableCell>
-                                  {partida.regla_cruce && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {partida.regla_cruce}
-                                    </Badge>
-                                  )}
+                                  {partida.regla_cruce && <RuleBadge regla={partida.regla_cruce} variant="compact" />}
                                 </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                      </ScrollArea>
+                      </div>
                       <Separator className="my-3" />
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">

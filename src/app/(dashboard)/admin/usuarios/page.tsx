@@ -2,16 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { useAuth } from "@/lib/hooks/use-auth";
-import {
-  useUsuarios,
-  useUpdateUsuarioEstado,
-  useUpdateUsuarioRol,
-} from "@/lib/hooks/use-usuarios";
+import { useUsuarios, useUpdateUsuarioEstado } from "@/lib/hooks/use-usuarios";
 import { useToast } from "@/lib/hooks/use-toast";
 import {
   Search,
   Shield,
-  UserCog,
+  Pencil,
   MoreHorizontal,
   AlertCircle,
   UserPlus,
@@ -41,16 +37,16 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { CrearUsuarioModal } from "@/components/admin/crear-usuario-modal";
-import { ROLES, ROL_INFO, getRolInfo, type RolUsuario, type Usuario } from "@/types/identity";
+import { getRolInfo, type Usuario } from "@/types/identity";
 
 function UsuarioRow({
   usuario,
   onToggleActivo,
-  onCambiarRol,
+  onEditar,
 }: {
   usuario: Usuario;
   onToggleActivo: (id: string, checked: boolean) => void;
-  onCambiarRol: (id: string, rol: RolUsuario) => void;
+  onEditar: (usuario: Usuario) => void;
 }) {
   const rolInfo = getRolInfo(usuario.rol);
   return (
@@ -62,9 +58,14 @@ function UsuarioRow({
               {usuario.nombre.charAt(0).toUpperCase()}
             </span>
           </div>
-          <span className="font-medium truncate max-w-[180px]">
+          <button
+            type="button"
+            onClick={() => onEditar(usuario)}
+            className="font-medium truncate max-w-[180px] text-left hover:text-primary hover:underline"
+            title="Editar usuario"
+          >
             {usuario.nombre}
-          </span>
+          </button>
         </div>
       </TableCell>
       <TableCell className="font-mono text-sm text-muted-foreground max-w-[280px] truncate">
@@ -109,20 +110,10 @@ function UsuarioRow({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {ROLES.map((rol) => (
-              <DropdownMenuItem
-                key={rol}
-                onClick={() => onCambiarRol(usuario.id_usuario, rol)}
-                disabled={usuario.rol === rol}
-              >
-                {rol === "ADMIN" ? (
-                  <Shield className="h-4 w-4 mr-2" />
-                ) : (
-                  <UserCog className="h-4 w-4 mr-2" />
-                )}
-                Asignar rol: {ROL_INFO[rol].label}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuItem onClick={() => onEditar(usuario)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar usuario
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>
@@ -157,10 +148,19 @@ export default function UsuariosAdminPage() {
 
   const { data: usuarios, isLoading } = useUsuarios({ enabled: esAdmin });
   const updateEstadoMutation = useUpdateUsuarioEstado();
-  const updateRolMutation = useUpdateUsuarioRol();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showCrearModal, setShowCrearModal] = useState(false);
+  const [usuarioEditar, setUsuarioEditar] = useState<Usuario | null>(null);
+
+  const abrirNuevo = () => {
+    setUsuarioEditar(null);
+    setShowCrearModal(true);
+  };
+  const abrirEdicion = (u: Usuario) => {
+    setUsuarioEditar(u);
+    setShowCrearModal(true);
+  };
 
   const filteredUsuarios = useMemo(() => {
     if (!usuarios) return [];
@@ -191,30 +191,6 @@ export default function UsuariosAdminPage() {
     } catch (error) {
       toast({
         title: "Error al actualizar estado",
-        description:
-          error instanceof Error ? error.message : "Error desconocido",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCambiarRol = async (
-    idUsuario: string,
-    nuevoRol: RolUsuario,
-  ) => {
-    try {
-      await updateRolMutation.mutateAsync({
-        idUsuario,
-        payload: { rol: nuevoRol },
-      });
-      toast({
-        title: "Rol actualizado",
-        description: "El rol del usuario ha sido actualizado.",
-        variant: "success",
-      });
-    } catch (error) {
-      toast({
-        title: "Error al actualizar rol",
         description:
           error instanceof Error ? error.message : "Error desconocido",
         variant: "destructive",
@@ -264,7 +240,7 @@ export default function UsuariosAdminPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowCrearModal(true)}>
+          <Button onClick={abrirNuevo}>
             <UserPlus className="h-4 w-4 mr-2" />
             Agregar Usuario
           </Button>
@@ -362,7 +338,7 @@ export default function UsuariosAdminPage() {
                   : "Agregue el primer usuario usando el botón 'Agregar Usuario'"}
               </p>
               <Button
-                onClick={() => setShowCrearModal(true)}
+                onClick={abrirNuevo}
                 className="w-auto"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -388,7 +364,7 @@ export default function UsuariosAdminPage() {
                       key={usuario.id_usuario}
                       usuario={usuario}
                       onToggleActivo={handleToggleActivo}
-                      onCambiarRol={handleCambiarRol}
+                      onEditar={abrirEdicion}
                     />
                   ))}
                 </TableBody>
@@ -401,6 +377,7 @@ export default function UsuariosAdminPage() {
       <CrearUsuarioModal
         open={showCrearModal}
         onOpenChange={setShowCrearModal}
+        usuario={usuarioEditar}
       />
     </div>
   );

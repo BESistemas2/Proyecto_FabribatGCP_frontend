@@ -10,8 +10,7 @@ import {
   Usuario,
   UsuarioCreate,
   UsuarioUpdateEstado,
-  UsuarioUpdateRol,
-} from "@/types/identity";
+  UsuarioUpdateRol, UsuarioUpdate } from "@/types/identity";
 
 export const usuariosKeys = {
   all: ["usuarios"] as const,
@@ -80,6 +79,18 @@ export function useUpdateUsuarioRol(
   return useMutation({
     mutationFn: ({ idUsuario, payload }) =>
       identidadApi.updateRol(idUsuario, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: usuariosKeys.all });
+    },
+    ...options,
+  });
+}
+export function useUpdateUsuario(
+  options?: UseMutationOptions<Usuario, Error, { idUsuario: string; payload: UsuarioUpdate }>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idUsuario, payload }) => identidadApi.updateUsuario(idUsuario, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: usuariosKeys.all });
     },
