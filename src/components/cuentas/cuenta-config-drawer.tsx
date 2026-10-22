@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { describirFrecuencia } from "@/lib/utils/auto-match";
+import { SelectorDestinatarios } from "@/components/shared/selector-destinatarios";
 import { CuentaBancaria, CuentaBancariaUpdate } from "@/types/bancos";
 import { useUpdateCuentaBancaria } from "@/lib/hooks/use-bancos";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -58,6 +59,7 @@ const configSchema = z.object({
     .min(15, "Mínimo 15 minutos")
     .max(1440, "Máximo 1440 minutos (24h)"),
   auto_match_enviar_correo: z.boolean(),
+  auto_match_destinatarios: z.array(z.string()).max(50, "Máximo 50 destinatarios"),
   activo: z.boolean(),
 });
 
@@ -126,6 +128,7 @@ export function CuentaConfigDrawer({
       auto_match_hora_ejecucion: DEFAULT_AUTO_MATCH_HORA,
       auto_match_intervalo_minutos: DEFAULT_INTERVALO,
       auto_match_enviar_correo: true,
+      auto_match_destinatarios: [],
       activo: true,
     },
     mode: "onBlur",
@@ -149,6 +152,7 @@ export function CuentaConfigDrawer({
           cuenta.rpa_intervalo_minutos ??
           DEFAULT_INTERVALO,
         auto_match_enviar_correo: cuenta.auto_match_enviar_correo ?? true,
+        auto_match_destinatarios: cuenta.auto_match_destinatarios ?? [],
         activo: cuenta.activo ?? true,
       });
     }
@@ -168,6 +172,7 @@ export function CuentaConfigDrawer({
       auto_match_hora: data.auto_match_hora_ejecucion,
       auto_match_intervalo_minutos: data.auto_match_intervalo_minutos,
       auto_match_enviar_correo: data.auto_match_enviar_correo,
+      auto_match_destinatarios: data.auto_match_destinatarios,
       activo: data.activo,
     };
 
@@ -198,6 +203,7 @@ export function CuentaConfigDrawer({
   const rpaHabilitado = form.watch("rpa_habilitado");
   const autoMatchHabilitado = form.watch("auto_match_habilitado");
   const autoMatchFrecuencia = form.watch("auto_match_frecuencia");
+  const enviarCorreo = form.watch("auto_match_enviar_correo");
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
@@ -521,8 +527,8 @@ export function CuentaConfigDrawer({
                       <div className="flex-1">
                         <FormLabel>Enviar informe por correo</FormLabel>
                         <FormDescription>
-                          Tras el Auto-Match programado, envía el informe Excel a los usuarios activos con rol
-                          Contabilidad o Receptor de correo, solo si hubo cruces nuevos (o un aviso si falló).
+                          Tras el Auto-Match programado, envía el informe Excel a los destinatarios de abajo,
+                          solo si hubo cruces nuevos (o un aviso si falló).
                         </FormDescription>
                       </div>
                       <Switch
@@ -533,6 +539,25 @@ export function CuentaConfigDrawer({
                     </FormItem>
                   )}
                 />
+
+                {autoMatchHabilitado && enviarCorreo && (
+                  <FormField
+                    control={form.control}
+                    name="auto_match_destinatarios"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Destinatarios del informe</FormLabel>
+                        <SelectorDestinatarios value={field.value} onChange={field.onChange} disabled={isSubmitting} />
+                        <FormDescription>
+                          {field.value.length === 0
+                            ? "Sin destinatarios: no se enviará ningún correo para esta cuenta."
+                            : "Cualquier usuario activo puede recibirlo, sin importar su rol."}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {autoMatchHabilitado && (
                   <div className="space-y-1 rounded-md border bg-muted/60 p-3 text-xs text-foreground">

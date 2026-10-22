@@ -22,6 +22,8 @@ export interface CuentaBancaria {
   auto_match_intervalo_minutos?: number;
   /** Enviar el informe por correo (RECEPTOR_MAIL y CONTABILIDAD) tras el Auto-Match programado */
   auto_match_enviar_correo?: boolean;
+  /** ids de los usuarios (cualquier rol) que reciben el informe de esta cuenta */
+  auto_match_destinatarios?: string[];
   activo?: boolean;
   grupo_registro_bc?: string | null;
   codigo_banco_bc?: string;
@@ -55,6 +57,7 @@ export interface CuentaBancariaUpdate {
   auto_match_hora_ejecucion?: string;
   auto_match_intervalo_minutos?: number;
   auto_match_enviar_correo?: boolean;
+  auto_match_destinatarios?: string[];
 }
 
 export interface SincronizarCatalogoResponse {
