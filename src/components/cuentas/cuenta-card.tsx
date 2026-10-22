@@ -126,8 +126,8 @@ export function CuentaCard({
 
         <div className="space-y-3">
           <FilaInterruptor
-            icono={<Settings className="h-4 w-4 text-blue-600" />}
-            fondo="bg-blue-50"
+            icono={<Settings className="h-4 w-4 text-amber-600" />}
+            fondo="bg-amber-50"
             titulo="RPA"
             descripcion="Descarga automática de extractos"
             checked={cuenta.rpa_habilitado}
@@ -135,8 +135,8 @@ export function CuentaCard({
             onChange={(v) => toggle(() => onRpaToggle(cuenta.id_cuenta, v), setRpaLoading)}
           />
           <FilaInterruptor
-            icono={<CheckCircle className="h-4 w-4 text-purple-600" />}
-            fondo="bg-purple-50"
+            icono={<CheckCircle className="h-4 w-4 text-primary" />}
+            fondo="bg-primary/10"
             titulo="Auto-Match"
             descripcion={cuenta.auto_match_habilitado ? `${describirFrecuencia(cuenta)} y tras cada carga` : 'Solo manual'}
             checked={cuenta.auto_match_habilitado}

@@ -591,10 +591,10 @@ export default function CargasPage() {
 
                   <Separator />
 
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="p-4 bg-muted/60 border rounded-lg">
                     <div className="flex items-start gap-3">
-                      <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-                      <div className="text-xs text-blue-800 dark:text-blue-200">
+                      <Shield className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div className="text-xs text-muted-foreground">
                         <p className="font-medium">Arquitectura Preparada</p>
                         <p className="mt-1">
                           Los endpoints{" "}

@@ -6,6 +6,9 @@ const config: Config = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    // Clases definidas en constantes (reglas de cruce, roles, estados)
+    './src/lib/**/*.{js,ts,jsx,tsx}',
+    './src/types/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     container: {
@@ -22,6 +25,7 @@ const config: Config = {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        'brand-yellow': 'hsl(var(--brand-yellow))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',

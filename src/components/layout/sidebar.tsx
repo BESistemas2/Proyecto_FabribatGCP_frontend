@@ -69,9 +69,10 @@ export function Sidebar({ navigation, pathname, collapsed, onToggle, mobileOpen,
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+                'relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
                 'hover:bg-accent hover:text-accent-foreground',
-                isActive && 'bg-primary text-primary-foreground',
+                isActive &&
+                  'bg-primary/[0.07] font-semibold text-primary hover:bg-primary/10 hover:text-primary before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-brand-yellow',
                 compacto && 'justify-center'
               )}
               onClick={onMobileClose}

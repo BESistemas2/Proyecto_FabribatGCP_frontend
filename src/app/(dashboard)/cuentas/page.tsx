@@ -177,12 +177,12 @@ export default function CuentasPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
-              <Zap className="h-5 w-5 text-blue-500" />
+              <Zap className="h-5 w-5 text-amber-500" />
               RPA Habilitado
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl md:text-3xl font-bold tabular-nums text-blue-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-amber-600">
               {cuentas?.filter((c) => c.rpa_habilitado).length || 0}
             </p>
           </CardContent>
@@ -190,12 +190,12 @@ export default function CuentasPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
-              <CheckCircle className="h-5 w-5 text-purple-500" />
+              <CheckCircle className="h-5 w-5 text-primary" />
               Auto-Match Activo
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl md:text-3xl font-bold tabular-nums text-purple-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-primary">
               {cuentas?.filter((c) => c.auto_match_habilitado).length || 0}
             </p>
           </CardContent>

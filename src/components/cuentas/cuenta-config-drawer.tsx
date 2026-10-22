@@ -229,7 +229,7 @@ export function CuentaConfigDrawer({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
                   Configuración RPA (Descarga Extractos)
                 </CardTitle>
               </CardHeader>
@@ -372,7 +372,7 @@ export function CuentaConfigDrawer({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                  <span className="w-2 h-2 rounded-full bg-primary" />
                   Configuración Auto-Match (Conciliación)
                 </CardTitle>
               </CardHeader>
@@ -510,7 +510,7 @@ export function CuentaConfigDrawer({
                   />
                 </div>
                 {autoMatchHabilitado && (
-                  <div className="space-y-1 rounded-md bg-purple-50 p-3 text-xs text-purple-900">
+                  <div className="space-y-1 rounded-md border bg-muted/60 p-3 text-xs text-foreground">
                     <p>
                       <span className="font-medium">Programación:</span>{" "}
                       {describirFrecuencia({
@@ -522,7 +522,7 @@ export function CuentaConfigDrawer({
                       primeros 10 días, si su acta no está cerrada).
                     </p>
                     {cuenta.auto_match_ultimo_resultado && (
-                      <p className="break-words text-purple-800/80">
+                      <p className="break-words text-muted-foreground">
                         <span className="font-medium">Última ejecución:</span>{" "}
                         {cuenta.auto_match_ultimo_resultado}
                       </p>

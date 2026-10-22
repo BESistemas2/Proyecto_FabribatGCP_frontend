@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
-import { ReglaCruce, REGLAS_CRUCE_CONFIG } from '@/lib/constants/bancos';
+import { ReglaCruce, REGLAS_CRUCE_CONFIG, getReglaConfig } from '@/lib/constants/bancos';
 
 interface RuleBadgeProps {
   regla: ReglaCruce | string | null | undefined;
@@ -17,21 +17,13 @@ export function RuleBadge({
 }: RuleBadgeProps) {
   if (!regla) return null;
 
-  const config = REGLAS_CRUCE_CONFIG[regla as ReglaCruce];
-
-  if (!config) {
-    return (
-      <Badge variant="secondary" className="text-xs">
-        {regla}
-      </Badge>
-    );
-  }
+  const config = getReglaConfig(regla);
 
   const baseClasses = 'font-medium';
 
   if (variant === 'compact') {
     return (
-      <Badge variant="outline" className={cn(config.className, baseClasses, 'px-2 py-0.5 text-xs')}>
+      <Badge variant="outline" title={config.descripcion || config.label} className={cn(config.className, baseClasses, 'px-2 py-0.5 text-xs')}>
         {config.shortLabel}
       </Badge>
     );
@@ -52,7 +44,9 @@ export function RuleBadge({
 function getRuleIcon(regla: ReglaCruce) {
   switch (regla) {
     case 'REGLA_1_EXACTA':
-    case 'REGLA_1_EXACTA_CONSOLIDADO':
+    case 'REGLA_1_EXACTA_REF2_GYE':
+    case 'REGLA_2_1_A_N_REF':
+    case 'REGLA_5_REF_ADICIONAL':
       return (
         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M18 6L6 18M6 6l12 12" />
@@ -84,7 +78,7 @@ export function RuleLegend() {
       <span className="text-xs font-medium text-muted-foreground">Reglas:</span>
       <div className="flex flex-wrap gap-2">
         {Object.entries(REGLAS_CRUCE_CONFIG).map(([key, config]) => (
-          <Badge key={key} variant="outline" className={cn(config.className, 'text-xs gap-1 px-2 py-1')}>
+          <Badge key={key} variant="outline" title={`${config.label}: ${config.descripcion}`} className={cn(config.className, 'cursor-help text-xs gap-1 px-2 py-1')}>
             {getRuleIcon(key as ReglaCruce)}
             {config.shortLabel}
           </Badge>

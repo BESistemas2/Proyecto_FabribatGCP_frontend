@@ -41,7 +41,7 @@ const ESTADO_CONFIG: Record<EstadoActa, { label: string; className: string }> =
     CERRADO: {
       label: "Cerrado",
       className:
-        "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
+        "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300",
     },
     APROBADO: {
       label: "Aprobado",

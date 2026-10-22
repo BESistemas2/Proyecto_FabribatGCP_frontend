@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
+import { getReglaConfig } from "@/lib/constants/bancos";
 import { sumarMontos } from "@/lib/utils/format";
 
 import type { GrupoConciliado } from "@/types/conciliacion";
@@ -25,59 +26,10 @@ interface ConciliadosViewProps {
   onDesconciliar?: (idConciliacion: string) => void;
 }
 
-// Mapeo flexible de reglas de cruce para evitar la caída en "Manual"
+// Etiqueta y color de la regla: mismo catálogo que el resto de la app
 function getReglaBadge(reglaRaw: string) {
-  const r = (reglaRaw || "").toUpperCase();
-
-  if (r.includes("CONSOLIDADO") || r.includes("1_N") || r.includes("1:N")) {
-    return {
-      label: "Consolidado 1:N",
-      className:
-        "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
-    };
-  }
-  if (
-    r.includes("EXACTA") ||
-    r.includes("EXACTO") ||
-    r.includes("1_1") ||
-    r.includes("1:1")
-  ) {
-    return {
-      label: "Exacto 1:1",
-      className:
-        "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 border-green-300",
-    };
-  }
-  if (
-    r.includes("PARCIAL") ||
-    r.includes("MONTO") ||
-    r.includes("FECHA") ||
-    r.includes("REGLA_2")
-  ) {
-    return {
-      label: "Monto + Fecha",
-      className:
-        "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
-    };
-  }
-  if (
-    r.includes("SUBCONJUNTO") ||
-    r.includes("COMBINATORIO") ||
-    r.includes("SUBSET") ||
-    r.includes("REGLA_4")
-  ) {
-    return {
-      label: "Subset Sum",
-      className:
-        "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300",
-    };
-  }
-
-  return {
-    label: "Manual",
-    className:
-      "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300",
-  };
+  const c = getReglaConfig(reglaRaw);
+  return { label: c.shortLabel, className: c.className };
 }
 
 function formatMoneyLocal(amount: number): string {
@@ -211,24 +163,32 @@ export function ConciliadosView({
                           {reglaInfo.label}
                         </Badge>
                         <span className="text-muted-foreground">
-                          {formatDateLocal(grupo.banco?.fecha)}
+                          {formatDateLocal(grupo.banco?.fecha ?? grupo.partidas_bc?.[0]?.fecha)}
                         </span>
                       </div>
 
                       <div className="overflow-hidden truncate max-w-xs sm:max-w-md">
-                        <span className="font-semibold text-foreground mr-2">
-                          {grupo.banco?.referencia}
-                        </span>
-                        <span className="text-muted-foreground truncate">
-                          {grupo.banco?.concepto}
-                        </span>
+                        {grupo.banco ? (
+                          <>
+                            <span className="font-semibold text-foreground mr-2">
+                              {grupo.banco.referencia}
+                            </span>
+                            <span className="text-muted-foreground truncate">
+                              {grupo.banco.concepto}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-sans text-muted-foreground">
+                            Doc. {grupo.partidas_bc?.[0]?.num_documento} · se anula dentro de BC (sin movimiento bancario)
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
                       <div className="text-right">
                         <span className="font-bold text-sm text-foreground">
-                          {formatMoneyLocal(grupo.banco?.monto)}
+                          {grupo.banco ? formatMoneyLocal(grupo.banco.monto) : formatMoneyLocal(0)}
                         </span>
                         <p className="text-[10px] text-muted-foreground">
                           {(grupo.partidas_bc || []).length}{" "}

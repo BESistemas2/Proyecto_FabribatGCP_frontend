@@ -17,13 +17,13 @@ export const ROL_INFO: Record<
     label: "Administrador",
     descripcion: "Acceso total: gestión de usuarios, cuentas y configuración.",
     badge: "destructive",
-    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    color: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   },
   CONTABILIDAD: {
     label: "Contabilidad",
     descripcion: "Carga de extractos, conciliaciones, actas y reportes.",
     badge: "outline",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    color: "bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   },
   BASICO: {
     label: "Básico",

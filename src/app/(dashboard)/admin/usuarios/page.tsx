@@ -302,12 +302,12 @@ export default function UsuariosAdminPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
-              <Shield className="h-5 w-5 text-purple-500" />
+              <Shield className="h-5 w-5 text-primary" />
               Administradores
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl md:text-3xl font-bold tabular-nums text-purple-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-primary">
               {usuarios?.filter((c) => c.rol === "ADMIN").length || 0}
             </p>
           </CardContent>

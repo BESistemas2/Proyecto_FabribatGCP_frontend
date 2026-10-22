@@ -3,7 +3,9 @@ export type ReglaCruce =
   | "REGLA_1_EXACTA_REF2_GYE"
   | "REGLA_2_1_A_N_REF"
   | "REGLA_2_PARCIAL"
-  | "REGLA_4_SUBCONJUNTO_COMBINATORIO";
+  | "REGLA_4_SUBCONJUNTO_COMBINATORIO"
+  | "REGLA_5_REF_ADICIONAL"
+  | "REGLA_REVERSO_BC";
 
 /** BORRADOR: se puede volver a conciliar. CERRADO: partidas congeladas (APROBADO: actas antiguas). */
 export type EstadoActa = "BORRADOR" | "CERRADO" | "APROBADO";
@@ -113,6 +115,7 @@ export interface GrupoConciliado {
   fecha_conciliacion: string;
   regla_aplicada: string;
   creado_por: string;
+  /** null en los reversos de BC (asientos que se anulan entre sí, sin movimiento bancario) */
   banco: {
     id_movimiento_banco: string;
     fecha: string;
@@ -120,7 +123,7 @@ export interface GrupoConciliado {
     referencia: string;
     monto: number;
     tipo: "CREDITO" | "DEBITO" | string;
-  };
+  } | null;
   partidas_bc: MovimientoBCVinculado[];
 }
 

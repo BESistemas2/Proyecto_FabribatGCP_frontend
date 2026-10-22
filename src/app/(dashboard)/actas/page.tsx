@@ -177,7 +177,7 @@ export default function ActasPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
               Total Actas
             </CardTitle>
           </CardHeader>

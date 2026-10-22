@@ -267,7 +267,7 @@ export default function WorkbenchPage() {
 
       {/* Tarjeta de Reglas */}
       {cuentaSeleccionada && (
-        <Card className="border-primary/20">
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-lg">Cuenta Seleccionada</CardTitle>

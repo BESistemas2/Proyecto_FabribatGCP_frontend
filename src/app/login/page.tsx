@@ -127,17 +127,23 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 px-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background px-4">
+      {/* Fondo: neutro cálido con un toque muy suave de los colores corporativos */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_100%_-10%,hsl(var(--brand-yellow)/0.10),transparent_60%),radial-gradient(50rem_30rem_at_-10%_110%,hsl(var(--primary)/0.07),transparent_60%)]"
+      />
+      <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <BrandLogo variant="vertical" priority className="mx-auto h-32 mb-5" />
+          <BrandLogo variant="horizontal" priority className="mx-auto mb-6 h-14" />
           <h1 className="text-2xl font-bold tracking-tight">Fabribat</h1>
           <p className="text-muted-foreground mt-1">
             Conciliación Bancaria & Automatización ETL
           </p>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="overflow-hidden shadow-xl">
+          <div className="h-1 bg-gradient-to-r from-primary via-primary to-brand-yellow" aria-hidden="true" />
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
             <CardDescription>
