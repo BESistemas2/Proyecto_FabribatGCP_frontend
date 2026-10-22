@@ -21,6 +21,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, esAdmin } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [menuMovil, setMenuMovil] = useState(false);
+
+  // Al navegar, el menú móvil se cierra
+  useEffect(() => setMenuMovil(false), [pathname]);
 
   // Respaldo del middleware: si la sesión se pierde estando en la app, volver al login
   useEffect(() => {
@@ -40,16 +44,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const navigation = NAVEGACION.filter((n) => !n.soloAdmin || esAdmin);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh bg-background">
       <Sidebar
         navigation={navigation}
         pathname={pathname}
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
+        mobileOpen={menuMovil}
+        onMobileClose={() => setMenuMovil(false)}
       />
-      <div className={cn("flex-1 flex flex-col overflow-hidden", collapsed ? "ml-16" : "ml-64")}>
-        <Header collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+      <div className={cn("flex min-w-0 flex-1 flex-col overflow-hidden", collapsed ? "md:ml-16" : "md:ml-64")}>
+        <Header onMenuClick={() => setMenuMovil(true)} />
+        <main className="min-w-0 flex-1 overflow-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

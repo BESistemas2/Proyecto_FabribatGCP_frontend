@@ -272,51 +272,42 @@ export default function UsuariosAdminPage() {
       </div>
 
       {/* Indicadores clave (KPIs) */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 md:[&>*:last-child:nth-child(odd)]:col-span-1">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <Shield className="h-5 w-5 text-primary" />
               Total Usuarios
-              <Badge variant="secondary" className="ml-2">
-                {usuarios?.length || 0}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums">
               {usuarios?.length || 0}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <Shield className="h-5 w-5 text-green-500" />
               Activos
-              <Badge variant="secondary" className="ml-2">
-                {usuarios?.filter((c) => c.activo).length || 0}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-green-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-green-600">
               {usuarios?.filter((c) => c.activo).length || 0}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <Shield className="h-5 w-5 text-purple-500" />
               Administradores
-              <Badge variant="secondary" className="ml-2">
-                {usuarios?.filter((c) => c.rol === "ADMIN").length || 0}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-purple-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-purple-600">
               {usuarios?.filter((c) => c.rol === "ADMIN").length || 0}
             </p>
           </CardContent>
@@ -327,7 +318,7 @@ export default function UsuariosAdminPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-base md:text-lg">
               <Shield className="h-5 w-5 text-primary" />
               Usuarios de la Allowlist
               <Badge variant="secondary" className="ml-2">

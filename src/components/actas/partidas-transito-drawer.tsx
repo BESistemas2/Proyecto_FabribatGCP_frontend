@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Download, Printer, Loader2, AlertCircle, FileText, ChevronRight, RotateCcw, Lock, Unlock } from 'lucide-react';
+import { X, Download, Printer, Loader2, AlertCircle, FileText, RotateCcw, Lock, Unlock } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,7 +74,7 @@ export function PartidasTransitoDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="flex flex-col h-full max-w-4xl">
+      <DrawerContent size="4xl">
         <DrawerHeader className="p-4 border-b">
           <div className="flex items-start justify-between">
             <div>
@@ -255,8 +255,7 @@ export function PartidasTransitoDrawer({
           )}
         </div>
 
-        <DrawerFooter className="p-4 border-t flex flex-wrap gap-2">
-          <div className="flex-1" />
+        <DrawerFooter className="flex-row flex-wrap justify-end gap-2 border-t p-4">
           {onPrint && (
             <Button variant="outline" onClick={() => onPrint(acta)}>
               <Printer className="h-4 w-4 mr-2" />
@@ -282,7 +281,6 @@ export function PartidasTransitoDrawer({
             </Button>
           )}
           <Button variant="default" onClick={() => onOpenChange(false)}>
-            <ChevronRight className="h-4 w-4 mr-2" />
             Salir
           </Button>
         </DrawerFooter>

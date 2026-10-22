@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import { RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ActasGrid } from "@/components/actas/actas-grid";
 import { PartidasTransitoDrawer } from "@/components/actas/partidas-transito-drawer";
 import { useActas } from "@/lib/hooks/use-conciliacion";
@@ -174,34 +173,28 @@ export default function ActasPage() {
       </div>
 
       {/* Tarjetas KPI de Estado */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 md:[&>*:last-child:nth-child(odd)]:col-span-1">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <div className="w-2 h-2 rounded-full bg-blue-500" />
               Total Actas
-              <Badge variant="secondary" className="ml-2">
-                {actas.length}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums">{actas.length}</p>
+            <p className="text-2xl md:text-3xl font-bold tabular-nums">{actas.length}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               Cerradas / Aprobadas
-              <Badge variant="secondary" className="ml-2">
-                {cerradasCount}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-green-600 dark:text-green-400">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-green-600 dark:text-green-400">
               {cerradasCount}
             </p>
           </CardContent>
@@ -209,16 +202,13 @@ export default function ActasPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <div className="w-2 h-2 rounded-full bg-amber-500" />
               En Borrador
-              <Badge variant="secondary" className="ml-2">
-                {borradorCount}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
               {borradorCount}
             </p>
           </CardContent>

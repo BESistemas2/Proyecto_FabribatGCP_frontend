@@ -50,7 +50,7 @@ export function KPICards({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
       {/* 1. Saldo Banco */}
       <Card className="kpi-card">
         <CardHeader className="pb-2">
@@ -62,11 +62,11 @@ export function KPICards({
           {tieneExtractoCargado ? (
             <MoneyFormat
               value={saldoBanco}
-              className="text-2xl font-bold tabular-nums"
+              className="break-words text-xl font-bold tabular-nums sm:text-2xl"
               zeroAsDash
             />
           ) : (
-            <div className="text-2xl font-bold font-mono text-muted-foreground">
+            <div className="text-xl font-bold font-mono text-muted-foreground sm:text-2xl">
               —
             </div>
           )}
@@ -92,7 +92,7 @@ export function KPICards({
         <CardContent>
           <MoneyFormat
             value={saldoLibros}
-            className="text-2xl font-bold tabular-nums"
+            className="break-words text-xl font-bold tabular-nums sm:text-2xl"
             zeroAsDash
           />
           {isLoading && (
@@ -113,10 +113,10 @@ export function KPICards({
             <MoneyDiff
               actual={saldoBanco}
               expected={saldoLibros}
-              className="text-2xl font-bold tabular-nums"
+              className="break-words text-xl font-bold tabular-nums sm:text-2xl"
             />
           ) : (
-            <div className="text-2xl font-bold font-mono text-muted-foreground">
+            <div className="text-xl font-bold font-mono text-muted-foreground sm:text-2xl">
               —
             </div>
           )}
@@ -170,7 +170,7 @@ export function KPICards({
 
 export function KPICardsSkeleton() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
       {[1, 2, 3, 4].map((i) => (
         <Card key={i} className="kpi-card">
           <CardHeader className="pb-2">

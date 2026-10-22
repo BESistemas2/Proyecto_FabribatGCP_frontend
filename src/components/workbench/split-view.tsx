@@ -31,7 +31,7 @@ export function BankMovementsTable({
 }: BankMovementsTableProps) {
   if (isLoading) {
     return (
-      <ScrollArea className="h-[calc(100vh-300px)] max-h-[500px] w-full">
+      <ScrollArea className="h-[min(62vh,520px)] min-h-[280px] w-full">
         <Table className="min-w-[550px]">
           <TableHeader>
             <TableRow>
@@ -75,7 +75,7 @@ export function BankMovementsTable({
 
   if (movements.length === 0) {
     return (
-      <ScrollArea className="h-[calc(100vh-300px)] max-h-[500px] w-full">
+      <ScrollArea className="h-[min(62vh,520px)] min-h-[280px] w-full">
         <div className="flex flex-col items-center justify-center h-full py-12 text-center">
           <Skeleton className="h-12 w-12 rounded-full mb-4" />
           <p className="text-muted-foreground text-sm">{emptyMessage}</p>
@@ -85,7 +85,7 @@ export function BankMovementsTable({
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-300px)] max-h-[500px] w-full">
+    <ScrollArea className="h-[min(62vh,520px)] min-h-[280px] w-full">
       <Table className="min-w-[580px]">
         <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur">
           <TableRow>
@@ -173,14 +173,12 @@ export function ErpMovementsTable({
 }: ErpMovementsTableProps) {
   if (isLoading) {
     return (
-      <ScrollArea className="h-[calc(100vh-300px)] max-h-[500px] w-full">
-        <Table className="min-w-[760px]">
+      <ScrollArea className="h-[min(62vh,520px)] min-h-[280px] w-full">
+        <Table className="min-w-[560px]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-20 px-2">Fecha</TableHead>
-              <TableHead className="w-20 px-2">Entry No.</TableHead>
-              <TableHead className="w-24 px-2">Doc. No.</TableHead>
-              <TableHead className="w-28 px-2">Ext. Doc. No.</TableHead>
+              <TableHead className="w-32 px-2">Documento</TableHead>
               <TableHead className="px-2">Descripción</TableHead>
               <TableHead className="w-24 px-2 text-right">Monto</TableHead>
               <TableHead className="w-28 px-2">Regla</TableHead>
@@ -193,13 +191,7 @@ export function ErpMovementsTable({
                   <Skeleton className="h-4 w-16" />
                 </TableCell>
                 <TableCell className="px-2">
-                  <Skeleton className="h-4 w-16" />
-                </TableCell>
-                <TableCell className="px-2">
-                  <Skeleton className="h-4 w-20" />
-                </TableCell>
-                <TableCell className="px-2">
-                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
                 </TableCell>
                 <TableCell className="px-2">
                   <Skeleton className="h-4 w-full" />
@@ -221,7 +213,7 @@ export function ErpMovementsTable({
 
   if (movements.length === 0) {
     return (
-      <ScrollArea className="h-[calc(100vh-300px)] max-h-[500px] w-full">
+      <ScrollArea className="h-[min(62vh,520px)] min-h-[280px] w-full">
         <div className="flex flex-col items-center justify-center h-full py-12 text-center">
           <Skeleton className="h-12 w-12 rounded-full mb-4" />
           <p className="text-muted-foreground text-sm">{emptyMessage}</p>
@@ -231,19 +223,17 @@ export function ErpMovementsTable({
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-300px)] max-h-[500px] w-full">
-      <Table className="min-w-[760px]">
+    <ScrollArea className="h-[min(62vh,520px)] min-h-[280px] w-full">
+      <Table className="min-w-[560px]">
         <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur">
           <TableRow>
             <TableHead className="w-20 px-2 text-xs">Fecha</TableHead>
-            <TableHead className="w-20 px-2 text-xs">Entry No.</TableHead>
-            <TableHead className="w-24 px-2 text-xs">Doc. No.</TableHead>
-            <TableHead className="w-28 px-2 text-xs">Ext. Doc. No.</TableHead>
+            <TableHead className="w-32 px-2 text-xs">Documento</TableHead>
             <TableHead className="px-2 text-xs">Descripción</TableHead>
             <TableHead className="w-24 px-2 text-right text-xs">
               Monto
             </TableHead>
-            <TableHead className="w-28 px-2 text-xs">Regla</TableHead>
+            <TableHead className="w-24 px-2 text-xs">Regla</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -259,36 +249,30 @@ export function ErpMovementsTable({
             const descVal = mov.description || mov.concepto;
             const keyVal =
               mov.id_movimiento_erp || mov.id || mov.entry_no_bc || idx;
+            const detalleDoc = [
+              docNoVal && `Doc.: ${docNoVal}`,
+              extDocVal && `Doc. externo: ${extDocVal}`,
+              entryNoVal != null && `Entry No.: ${entryNoVal}`,
+            ].filter(Boolean).join("\n");
 
             return (
               <TableRow key={keyVal} className="hover:bg-muted/50">
                 <TableCell className="font-mono text-xs px-2 whitespace-nowrap">
                   {fechaVal ? String(fechaVal).split("T")[0] : "—"}
                 </TableCell>
-                <TableCell className="font-mono text-xs px-2 whitespace-nowrap">
-                  {entryNoVal !== null && entryNoVal !== undefined
-                    ? Number(entryNoVal).toLocaleString()
-                    : "—"}
+                <TableCell className="px-2 max-w-[140px]" title={detalleDoc}>
+                  <p className="truncate font-mono text-xs">{docNoVal || "—"}</p>
+                  {extDocVal && (
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">{extDocVal}</p>
+                  )}
                 </TableCell>
                 <TableCell
-                  className="font-mono text-xs px-2 max-w-[90px] truncate"
-                  title={docNoVal || ""}
-                >
-                  {docNoVal || "—"}
-                </TableCell>
-                <TableCell
-                  className="font-mono text-xs px-2 max-w-[110px] truncate"
-                  title={extDocVal || ""}
-                >
-                  {extDocVal || "—"}
-                </TableCell>
-                <TableCell
-                  className="text-xs px-2 max-w-[160px] truncate"
+                  className="text-xs px-2 max-w-[200px] truncate"
                   title={descVal || ""}
                 >
                   {descVal || "—"}
                 </TableCell>
-                <TableCell className="text-right font-mono text-xs px-2 tabular-nums font-medium">
+                <TableCell className="text-right font-mono text-xs px-2 tabular-nums font-medium whitespace-nowrap">
                   <MoneyFormat value={mov.monto} />
                 </TableCell>
                 <TableCell className="px-2">
@@ -325,7 +309,7 @@ export function SplitView({
 }: SplitViewProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-      <div className="flex flex-col h-full bg-card rounded-lg border overflow-hidden">
+      <div className="flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card">
         <div className="p-3 border-b bg-muted/30">
           <h3 className="font-semibold flex items-center gap-2 text-sm">
             <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -344,7 +328,7 @@ export function SplitView({
         </div>
       </div>
 
-      <div className="flex flex-col h-full bg-card rounded-lg border overflow-hidden">
+      <div className="flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card">
         <div className="p-3 border-b bg-muted/30">
           <h3 className="font-semibold flex items-center gap-2 text-sm">
             <span className="w-2 h-2 rounded-full bg-green-500" />

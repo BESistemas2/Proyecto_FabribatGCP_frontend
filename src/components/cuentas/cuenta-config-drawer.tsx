@@ -5,7 +5,6 @@ import {
   X,
   Loader2,
   Save,
-  AlertCircle,
   ChevronDown,
   Check,
 } from "lucide-react";
@@ -33,8 +32,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils/cn";
+import { describirFrecuencia } from "@/lib/utils/auto-match";
 import { CuentaBancaria, CuentaBancariaUpdate } from "@/types/bancos";
 import { useUpdateCuentaBancaria } from "@/lib/hooks/use-bancos";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -71,8 +70,8 @@ interface CuentaConfigDrawerProps {
 
 const FRECUENCIA_OPTIONS = [
   { value: "DIARIA", label: "Diaria" },
-  { value: "SEMANAL", label: "Semanal" },
-  { value: "MENSUAL", label: "Mensual" },
+  { value: "SEMANAL", label: "Semanal (lunes)" },
+  { value: "MENSUAL", label: "Mensual (día 1)" },
 ] as const;
 
 const DEFAULT_RPA_HORA = "02:00";
@@ -194,10 +193,11 @@ export function CuentaConfigDrawer({
   const bancoNombre = cuenta.banco_nombre || "Banco no identificado";
   const rpaHabilitado = form.watch("rpa_habilitado");
   const autoMatchHabilitado = form.watch("auto_match_habilitado");
+  const autoMatchFrecuencia = form.watch("auto_match_frecuencia");
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="flex flex-col max-w-lg">
+      <DrawerContent size="lg">
         <DrawerHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <div>
@@ -224,17 +224,6 @@ export function CuentaConfigDrawer({
             className="flex-1 overflow-y-auto p-4 space-y-6"
             id="config-form"
           >
-            <Alert variant="default" className="mb-2">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                Los cambios se aplican mediante{" "}
-                <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
-                  PUT /bancos/cuentas/{cuenta.id_cuenta}
-                </code>
-                . El RPA y Auto-Match requieren configuración válida para
-                operar.
-              </AlertDescription>
-            </Alert>
 
             {/* CARD RPA */}
             <Card>
@@ -396,8 +385,8 @@ export function CuentaConfigDrawer({
                       <div className="flex-1">
                         <FormLabel>Auto-Match Habilitado</FormLabel>
                         <FormDescription>
-                          Ejecuta conciliación automática tras cada carga de
-                          extracto
+                          Concilia automáticamente según el horario de abajo y
+                          tras cada carga de extracto
                         </FormDescription>
                       </div>
                       <Switch
@@ -480,7 +469,7 @@ export function CuentaConfigDrawer({
                     name="auto_match_hora_ejecucion"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Hora de Auto-Match</FormLabel>
+                        <FormLabel>Hora (Ecuador)</FormLabel>
                         <FormControl>
                           <Input
                             type="time"
@@ -489,9 +478,7 @@ export function CuentaConfigDrawer({
                             className="w-full"
                           />
                         </FormControl>
-                        <FormDescription>
-                          Formato 24h (ej. 04:00)
-                        </FormDescription>
+                        <FormDescription>Formato 24 h</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -502,7 +489,7 @@ export function CuentaConfigDrawer({
                     name="auto_match_intervalo_minutos"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Intervalo (minutos)</FormLabel>
+                        <FormLabel>Repetir cada (min)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -510,18 +497,38 @@ export function CuentaConfigDrawer({
                             max={1440}
                             step={15}
                             {...field}
-                            disabled={isSubmitting || !autoMatchHabilitado}
+                            disabled={isSubmitting || !autoMatchHabilitado || autoMatchFrecuencia !== "DIARIA"}
                             className="w-full"
                           />
                         </FormControl>
                         <FormDescription>
-                          Mín 15, Máx 1440 (24h)
+                          Solo diaria. 1440 = una vez al día
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                {autoMatchHabilitado && (
+                  <div className="space-y-1 rounded-md bg-purple-50 p-3 text-xs text-purple-900">
+                    <p>
+                      <span className="font-medium">Programación:</span>{" "}
+                      {describirFrecuencia({
+                        auto_match_frecuencia: autoMatchFrecuencia,
+                        auto_match_hora: form.watch("auto_match_hora_ejecucion"),
+                        auto_match_intervalo_minutos: Number(form.watch("auto_match_intervalo_minutos")),
+                      })}{" "}
+                      y tras cada carga de extracto. Concilia el mes en curso (y el anterior durante los
+                      primeros 10 días, si su acta no está cerrada).
+                    </p>
+                    {cuenta.auto_match_ultimo_resultado && (
+                      <p className="break-words text-purple-800/80">
+                        <span className="font-medium">Última ejecución:</span>{" "}
+                        {cuenta.auto_match_ultimo_resultado}
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -561,7 +568,7 @@ export function CuentaConfigDrawer({
           </form>
         </Form>
 
-        <DrawerFooter className="p-4 border-t flex gap-2">
+        <DrawerFooter className="flex-row justify-end gap-2 border-t p-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -573,7 +580,7 @@ export function CuentaConfigDrawer({
             type="submit"
             form="config-form"
             disabled={isSubmitting}
-            className="flex-1 gap-2"
+            className="gap-2"
           >
             {isSubmitting ? (
               <>

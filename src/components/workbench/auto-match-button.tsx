@@ -20,18 +20,18 @@ export function AutoMatchButton({ onClick, isPending, disabled, motivo }: AutoMa
       disabled={disabled || isPending}
       title={motivo}
       className={cn(
-        "w-full sm:w-auto gap-2 font-semibold text-lg px-6 py-3 shadow-md transition-all",
+        "w-full shrink-0 gap-2 font-semibold shadow-sm sm:w-auto",
         "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground",
       )}
     >
       {isPending ? (
         <>
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" />
           Ejecutando cruce...
         </>
       ) : (
         <>
-          <Zap className="h-5 w-5 fill-current" />
+          <Zap className="h-4 w-4 fill-current" />
           Ejecutar Auto-Match
         </>
       )}

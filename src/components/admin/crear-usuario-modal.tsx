@@ -98,7 +98,7 @@ export function CrearUsuarioModal({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="flex flex-col max-w-md">
+      <DrawerContent>
         <DrawerHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <div>
@@ -200,13 +200,8 @@ export function CrearUsuarioModal({
                     </FormControl>
                     <SelectContent>
                       {ROLES.map((value) => (
-                        <SelectItem key={value} value={value}>
-                          <div className="flex flex-col gap-0.5 py-1">
-                            <span className="font-medium">{ROL_INFO[value].label}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {ROL_INFO[value].descripcion}
-                            </span>
-                          </div>
+                        <SelectItem key={value} value={value} description={ROL_INFO[value].descripcion}>
+                          {ROL_INFO[value].label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -218,7 +213,7 @@ export function CrearUsuarioModal({
           </form>
         </Form>
 
-        <DrawerFooter className="p-4 border-t flex gap-2">
+        <DrawerFooter className="flex-row justify-end gap-2 border-t p-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -230,7 +225,7 @@ export function CrearUsuarioModal({
             type="submit"
             form="crear-usuario-form"
             disabled={createMutation.isPending}
-            className="flex-1 gap-2"
+            className="gap-2"
           >
             {createMutation.isPending ? (
               <>

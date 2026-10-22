@@ -103,7 +103,9 @@ export function AccountPeriodSelector({
 
   const handleAplicar = () => {
     setActiveDropdown(null);
-    onPeriodoChange(tempInicio, tempFin);
+    // Fechas AAAA-MM-DD: se comparan como texto. Si vienen invertidas se ordenan.
+    const [inicio, fin] = tempInicio && tempFin && tempFin < tempInicio ? [tempFin, tempInicio] : [tempInicio, tempFin];
+    onPeriodoChange(inicio, fin);
   };
 
   const handleLimpiar = () => {
@@ -215,8 +217,8 @@ export function AccountPeriodSelector({
         </Button>
 
         {activeDropdown === "periodo" && (
-          <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-50 rounded-md border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
-            <div className="flex gap-4 p-4">
+          <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-50 max-h-[80dvh] max-w-[calc(100vw-2rem)] overflow-auto rounded-md border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
+            <div className="flex flex-col gap-4 p-4 sm:flex-row">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2">
                   Fecha Inicio
@@ -228,7 +230,7 @@ export function AccountPeriodSelector({
                   disabled={disabled}
                 />
               </div>
-              <Separator orientation="vertical" className="my-2" />
+              <Separator orientation="vertical" className="my-2 hidden sm:block" />
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2">
                   Fecha Fin

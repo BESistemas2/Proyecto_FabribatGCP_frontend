@@ -5,8 +5,9 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils/cn"
 
+// Sin escalar el fondo: con paneles laterales el efecto deja franjas en blanco y negro
 const Drawer = ({
-  shouldScaleBackground = true,
+  shouldScaleBackground = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root
@@ -28,27 +29,48 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/80", className)}
+    className={cn("fixed inset-0 z-50 bg-black/50", className)}
     {...props}
   />
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
+/**
+ * Panel deslizante. Según `direction` del <Drawer>:
+ * - bottom (por defecto): hoja inferior con asa.
+ * - right / left: panel lateral a pantalla completa en móvil y, en escritorio, del ancho
+ *   indicado en `size` (md = 28rem por defecto).
+ */
+const ANCHO_LATERAL = {
+  md: "sm:data-[vaul-drawer-direction=right]:max-w-md sm:data-[vaul-drawer-direction=left]:max-w-md",
+  lg: "sm:data-[vaul-drawer-direction=right]:max-w-lg sm:data-[vaul-drawer-direction=left]:max-w-lg",
+  "2xl": "sm:data-[vaul-drawer-direction=right]:max-w-2xl sm:data-[vaul-drawer-direction=left]:max-w-2xl",
+  "4xl": "sm:data-[vaul-drawer-direction=right]:max-w-4xl sm:data-[vaul-drawer-direction=left]:max-w-4xl",
+} as const
+
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & { size?: keyof typeof ANCHO_LATERAL }
+>(({ className, children, size = "md", ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+        "group/drawer fixed z-50 flex flex-col border bg-background outline-none",
+        // Hoja inferior
+        "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[90dvh] data-[vaul-drawer-direction=bottom]:rounded-t-[10px]",
+        // Paneles laterales
+        "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:border-y-0 data-[vaul-drawer-direction=right]:border-r-0",
+        "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:border-y-0 data-[vaul-drawer-direction=left]:border-l-0",
+        "data-[vaul-drawer-direction=right]:h-dvh data-[vaul-drawer-direction=left]:h-dvh data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=left]:w-full",
+        "data-[vaul-drawer-direction=right]:shadow-xl",
+        ANCHO_LATERAL[size],
         className
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <div className="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer:block" />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

@@ -121,7 +121,9 @@ export default function CargasPage() {
 
       toast({
         title: r.advertencias.length ? "Carga completada con advertencias" : "Carga completada",
-        description: r.mensaje,
+        description: r.auto_match_en_curso
+          ? `${r.mensaje} El Auto-Match se está ejecutando en segundo plano; los resultados aparecerán en el Workbench en unos segundos.`
+          : r.mensaje,
         variant: r.advertencias.length ? "warning" : "success",
       });
       setSelectedFile(null);

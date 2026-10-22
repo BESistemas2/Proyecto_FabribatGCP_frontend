@@ -6,7 +6,6 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { sumarMontos } from "@/lib/utils/format";
 import { RefreshCw, Info, Layers, CheckCheck, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { KPICards, KPICardsSkeleton } from "@/components/workbench/kpi-cards";
@@ -151,7 +150,7 @@ export default function WorkbenchPage() {
 
 
   return (
-    <div className="flex flex-col gap-6 h-full min-w-0">
+    <div className="flex min-w-0 flex-col gap-6">
       {/* Cabecera Principal + Tabs + Modal de Reporte */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -270,9 +269,9 @@ export default function WorkbenchPage() {
       {cuentaSeleccionada && (
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-lg">Cuenta Seleccionada</CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <span className="px-2 py-0.5 bg-muted rounded">
                   {cuentaSeleccionada.banco_nombre}
                 </span>
@@ -289,9 +288,8 @@ export default function WorkbenchPage() {
         </Card>
       )}
 
-      {/* Cards de KPIs */}
-      <Card>
-        <CardContent className="pt-0">
+      {/* KPIs (cada uno ya es una tarjeta) */}
+      <div>
           {isAnyLoading ? (
             <KPICardsSkeleton />
           ) : (
@@ -303,8 +301,7 @@ export default function WorkbenchPage() {
               pendientesErp={movimientosErp.length}
             />
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {/* Contenido Dinámico según la Vista Seleccionada */}
       {!fechaInicio || !fechaFin ? (
@@ -319,29 +316,36 @@ export default function WorkbenchPage() {
           </CardContent>
         </Card>
       ) : vistaModo === "pendientes" ? (
-        <Card className="flex-1 min-h-0">
-          <CardContent className="pt-0 h-full">
-            <AutoMatchButton
-              onClick={handleEjecutarAutoMatch}
-              isPending={autoMatchMutation.isPending}
-              disabled={!!motivoSinAutoMatch || movimientosLoading || mayorLoading}
-              motivo={motivoSinAutoMatch}
-            />
-            <Separator className="my-4" />
-            <div className="h-[calc(100vh-420px)] min-h-[400px]">
-              <SplitView
-                bankMovements={movimientosBanco || []}
-                erpMovements={movimientosErp || []}
-                isLoadingBank={movimientosLoading}
-                isLoadingErp={mayorLoading}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Movimientos pendientes</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Extracto del banco frente al Libro Mayor de Business Central
+                </p>
+              </div>
+              <AutoMatchButton
+                onClick={handleEjecutarAutoMatch}
+                isPending={autoMatchMutation.isPending}
+                disabled={!!motivoSinAutoMatch || movimientosLoading || mayorLoading}
+                motivo={motivoSinAutoMatch}
               />
             </div>
+          </CardHeader>
+          <CardContent>
+            <SplitView
+              bankMovements={movimientosBanco || []}
+              erpMovements={movimientosErp || []}
+              isLoadingBank={movimientosLoading}
+              isLoadingErp={mayorLoading}
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="flex-1 min-h-0">
-          <CardContent className="pt-4 h-full">
-            <div className="h-[calc(100vh-380px)] min-h-[400px]">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="h-[min(70vh,680px)] min-h-[360px]">
               <ConciliadosView
                 grupos={gruposConciliados || []}
                 isLoading={conciliadosLoading}

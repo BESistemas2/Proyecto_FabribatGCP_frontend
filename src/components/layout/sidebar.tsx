@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { BrandLogo } from '@/components/shared/brand-logo';
-import { ChevronLeft, ChevronRight, Activity, FileText, Settings, UploadCloud, LayoutDashboard } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface NavItem {
   name: string;
@@ -19,19 +19,30 @@ interface SidebarProps {
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
+  /** Pantallas pequeñas: el menú se abre encima del contenido */
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
-export function Sidebar({ navigation, pathname, collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ navigation, pathname, collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+  // En móvil el menú siempre se muestra completo (no colapsado)
+  const compacto = collapsed && !mobileOpen;
   return (
+    <>
+    {mobileOpen && (
+      <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={onMobileClose} aria-hidden="true" />
+    )}
     <aside
       className={cn(
-        'fixed left-0 top-0 z-20 h-screen border-r bg-card transition-all duration-300 flex flex-col',
-        collapsed ? 'w-16' : 'w-64'
+        'fixed left-0 top-0 z-40 flex h-dvh flex-col border-r bg-card transition-all duration-300',
+        'w-64 -translate-x-full md:z-20 md:translate-x-0',
+        mobileOpen && 'translate-x-0 shadow-xl',
+        compacto && 'md:w-16'
       )}
     >
       <div className="flex h-16 items-center justify-between px-4 border-b">
-        {!collapsed && (
-          <Link href="/workbench" className="flex items-center" aria-label="Inicio">
+        {!compacto && (
+          <Link href="/workbench" className="flex items-center" aria-label="Inicio" onClick={onMobileClose}>
             <BrandLogo variant="horizontal" priority className="h-10" />
           </Link>
         )}
@@ -39,10 +50,13 @@ export function Sidebar({ navigation, pathname, collapsed, onToggle }: SidebarPr
           variant="ghost"
           size="icon"
           onClick={onToggle}
-          className={cn('h-8 w-8', collapsed && 'mx-auto')}
-          aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+          className={cn('hidden h-8 w-8 md:inline-flex', compacto && 'mx-auto')}
+          aria-label={compacto ? 'Expandir menú' : 'Colapsar menú'}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {compacto ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onMobileClose} className="h-8 w-8 md:hidden" aria-label="Cerrar menú">
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
@@ -58,25 +72,27 @@ export function Sidebar({ navigation, pathname, collapsed, onToggle }: SidebarPr
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
                 'hover:bg-accent hover:text-accent-foreground',
                 isActive && 'bg-primary text-primary-foreground',
-                collapsed && 'justify-center'
+                compacto && 'justify-center'
               )}
-              title={collapsed ? item.name : undefined}
+              onClick={onMobileClose}
+              title={compacto ? item.name : undefined}
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
-              {!collapsed && <span className="font-medium truncate">{item.name}</span>}
+              {!compacto && <span className="font-medium truncate">{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
       <div className="p-3 border-t">
-        {!collapsed && (
+        {!compacto && (
           <div className="text-xs text-muted-foreground text-center">
             v1.0.0 - Conciliación Bancaria
           </div>
         )}
       </div>
     </aside>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, CreditCard, Hash, Settings, ChevronRight, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Building2, CreditCard, Hash, Settings, ChevronRight, CheckCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils/cn';
 import { CuentaBancaria } from '@/types/bancos';
-import { getBancoConfig, getBancoLogo, ESTADO_RPA_CONFIG } from '@/lib/constants/bancos';
+import { getBancoConfig, getBancoLogo } from '@/lib/constants/bancos';
+import { describirFrecuencia, resumenUltimaEjecucion } from '@/lib/utils/auto-match';
 
 interface CuentaCardProps {
   cuenta: CuentaBancaria;
@@ -31,68 +32,60 @@ export function CuentaCard({
 
   const bancoConfig = getBancoConfig(cuenta.banco_codigo);
   const logoUrl = getBancoLogo(cuenta.banco_codigo);
-  const rpaStatusConfig = ESTADO_RPA_CONFIG[cuenta.estado_rpa as keyof typeof ESTADO_RPA_CONFIG] ?? {
-    label: cuenta.estado_rpa || 'Desconocido',
-    variant: 'secondary' as const,
-    icon: 'help-circle',
-    className: 'text-gray-500',
-  };
+  const titulo = cuenta.alias || cuenta.banco_nombre;
+  const ultima = resumenUltimaEjecucion(cuenta);
 
-  const handleRpaToggle = async (checked: boolean) => {
-    setRpaLoading(true);
+  const toggle = async (fn: () => Promise<void>, setLoading: (v: boolean) => void) => {
+    setLoading(true);
     try {
-      await onRpaToggle(cuenta.id_cuenta, checked);
+      await fn();
     } catch (error) {
-      console.error('Error toggling RPA:', error);
+      console.error('Error al actualizar la cuenta:', error);
     } finally {
-      setRpaLoading(false);
-    }
-  };
-
-  const handleAutoMatchToggle = async (checked: boolean) => {
-    setAutoMatchLoading(true);
-    try {
-      await onAutoMatchToggle(cuenta.id_cuenta, checked);
-    } catch (error) {
-      console.error('Error toggling Auto-Match:', error);
-    } finally {
-      setAutoMatchLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Card className="h-full transition-shadow hover:shadow-lg border-l-4" style={{ borderLeftColor: bancoConfig.color }}>
+    <Card
+      className="flex h-full min-w-0 flex-col overflow-hidden border-l-4 transition-shadow hover:shadow-lg"
+      style={{ borderLeftColor: bancoConfig.color }}
+    >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: bancoConfig.colorLight }}
-            >
+        <div className="flex items-start gap-3">
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: bancoConfig.colorLight }}
+          >
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
                 alt={bancoConfig.nombre}
-                className="w-8 h-8 object-contain"
+                className="h-7 w-7 object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
-              <Building2 className="w-6 h-6 hidden" style={{ color: bancoConfig.color }} />
-            </div>
-            <div>
-              <CardTitle className="text-lg font-semibold truncate max-w-[280px]">
-                {cuenta.alias || cuenta.banco_nombre}
-              </CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <Badge variant="outline" className="gap-1 px-2 py-0.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cuenta.moneda === 'USD' ? '#22c55e' : '#3b82f6' }} />
-                  {cuenta.moneda}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {cuenta.estado_rpa}
-                </Badge>
-              </div>
+            ) : null}
+            <Building2 className={cn('h-6 w-6', logoUrl && 'hidden')} style={{ color: bancoConfig.color }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="line-clamp-2 break-words text-base font-semibold leading-tight" title={titulo}>
+              {titulo}
+            </CardTitle>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <Badge variant="outline" className="gap-1 px-2 py-0 text-xs">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: cuenta.moneda === 'USD' ? '#22c55e' : '#3b82f6' }}
+                />
+                {cuenta.moneda}
+              </Badge>
+              {cuenta.banco_nombre && cuenta.banco_nombre !== titulo && (
+                <span className="truncate text-xs text-muted-foreground">{cuenta.banco_nombre}</span>
+              )}
             </div>
           </div>
           <Button
@@ -100,102 +93,113 @@ export function CuentaCard({
             size="icon"
             onClick={() => onConfigClick(cuenta)}
             disabled={isUpdating}
-            className="h-8 w-8"
+            className="h-8 w-8 shrink-0"
+            aria-label="Configurar cuenta"
+            title="Configurar cuenta"
           >
             <Settings className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="space-y-1 p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-              <CreditCard className="h-3 w-3" />
-              Número de Cuenta
-            </p>
-            <p className="font-mono font-medium text-lg tabular-nums truncate">{cuenta.numero_cuenta}</p>
+      <CardContent className="flex flex-1 flex-col gap-4">
+        <dl className="grid gap-2 rounded-lg bg-muted/40 p-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+            <dt className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <CreditCard className="h-3.5 w-3.5" />
+              N° de cuenta
+            </dt>
+            <dd className="ml-auto whitespace-nowrap font-mono font-medium tabular-nums">
+              {cuenta.numero_cuenta || '—'}
+            </dd>
           </div>
-          <div className="space-y-1 p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-              <Hash className="h-3 w-3" />
-              Cuenta Contable BC
-            </p>
-            <p className="font-mono font-medium text-sm truncate">{cuenta.cuenta_contable_bc}</p>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+            <dt className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <Hash className="h-3.5 w-3.5" />
+              Cuenta contable BC
+            </dt>
+            <dd className="ml-auto whitespace-nowrap font-mono font-medium">
+              {cuenta.cuenta_contable_bc || '—'}
+            </dd>
           </div>
-        </div>
-
-        <Separator />
+        </dl>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                <Settings className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium">RPA Habilitado</p>
-                <p className="text-xs text-muted-foreground">
-                  Descarga automática de extractos
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={cuenta.rpa_habilitado}
-              onCheckedChange={handleRpaToggle}
-              disabled={rpaLoading || isUpdating}
-              aria-label="Activar/Desactivar RPA"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="font-medium">Auto-Match Habilitado</p>
-                <p className="text-xs text-muted-foreground">
-                  Conciliación automática al cargar extractos
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={cuenta.auto_match_habilitado}
-              onCheckedChange={handleAutoMatchToggle}
-              disabled={autoMatchLoading || isUpdating}
-              aria-label="Activar/Desactivar Auto-Match"
-            />
-          </div>
+          <FilaInterruptor
+            icono={<Settings className="h-4 w-4 text-blue-600" />}
+            fondo="bg-blue-50"
+            titulo="RPA"
+            descripcion="Descarga automática de extractos"
+            checked={cuenta.rpa_habilitado}
+            disabled={rpaLoading || isUpdating}
+            onChange={(v) => toggle(() => onRpaToggle(cuenta.id_cuenta, v), setRpaLoading)}
+          />
+          <FilaInterruptor
+            icono={<CheckCircle className="h-4 w-4 text-purple-600" />}
+            fondo="bg-purple-50"
+            titulo="Auto-Match"
+            descripcion={cuenta.auto_match_habilitado ? `${describirFrecuencia(cuenta)} y tras cada carga` : 'Solo manual'}
+            checked={cuenta.auto_match_habilitado}
+            disabled={autoMatchLoading || isUpdating}
+            onChange={(v) => toggle(() => onAutoMatchToggle(cuenta.id_cuenta, v), setAutoMatchLoading)}
+          />
         </div>
 
-        <Separator />
-
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <span className={cn('w-2 h-2 rounded-full', rpaStatusConfig.className)} />
-            <span className="font-medium">{rpaStatusConfig.label}</span>
-            {cuenta.ultima_sincronizacion && (
-              <>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">Última sync: {new Date(cuenta.ultima_sincronizacion).toLocaleDateString('es-EC')}</span>
-              </>
-            )}
+        <div className="mt-auto space-y-2 border-t pt-3">
+          <div className="flex min-w-0 items-start gap-2 text-xs" title={cuenta.auto_match_ultimo_resultado || undefined}>
+            <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground">Última conciliación automática</p>
+              <p className={cn('truncate font-medium', ultima.error && 'text-destructive')}>{ultima.texto}</p>
+            </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onConfigClick(cuenta)}
-            className="gap-1"
+            className="h-8 w-full justify-between px-2"
             disabled={isUpdating}
           >
-            <Settings className="h-3.5 w-3.5" />
-            Configuración Avanzada
+            <span className="flex items-center gap-1.5">
+              <Settings className="h-3.5 w-3.5" />
+              Configuración
+            </span>
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FilaInterruptor({
+  icono,
+  fondo,
+  titulo,
+  descripcion,
+  checked,
+  disabled,
+  onChange,
+}: {
+  icono: React.ReactNode;
+  fondo: string;
+  titulo: string;
+  descripcion: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', fondo)}>{icono}</div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-tight">{titulo}</p>
+        <p className="truncate text-xs text-muted-foreground" title={descripcion}>
+          {descripcion}
+        </p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} aria-label={`Activar/Desactivar ${titulo}`} className="shrink-0" />
+    </div>
   );
 }
 

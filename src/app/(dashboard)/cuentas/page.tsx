@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CuentasGrid } from "@/components/cuentas/cuentas-grid";
@@ -161,51 +160,42 @@ export default function CuentasPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 md:[&>*:last-child:nth-child(odd)]:col-span-1">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <Building2 className="h-5 w-5 text-primary" />
               Total Cuentas
-              <Badge variant="secondary" className="ml-2">
-                {cuentas?.length || 0}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums">
               {cuentas?.length || 0}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <Zap className="h-5 w-5 text-blue-500" />
               RPA Habilitado
-              <Badge variant="secondary" className="ml-2">
-                {cuentas?.filter((c) => c.rpa_habilitado).length || 0}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-blue-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-blue-600">
               {cuentas?.filter((c) => c.rpa_habilitado).length || 0}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium md:text-base">
               <CheckCircle className="h-5 w-5 text-purple-500" />
               Auto-Match Activo
-              <Badge variant="secondary" className="ml-2">
-                {cuentas?.filter((c) => c.auto_match_habilitado).length || 0}
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-purple-600">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-purple-600">
               {cuentas?.filter((c) => c.auto_match_habilitado).length || 0}
             </p>
           </CardContent>

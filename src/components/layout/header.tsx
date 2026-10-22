@@ -18,8 +18,7 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar';
 import {
-  ChevronLeft,
-  ChevronRight,
+  Menu,
   LogOut,
   User,
   Settings,
@@ -29,11 +28,11 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { BrandLogo } from '@/components/shared/brand-logo';
 
 interface HeaderProps {
-  collapsed: boolean;
-  onToggle: () => void;
+  /** Abre el menú lateral en pantallas pequeñas */
+  onMenuClick: () => void;
 }
 
-export function Header({ collapsed, onToggle }: HeaderProps) {
+export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout, isAuthenticated } = useAuth();
   const [logoutLoading, setLogoutLoading] = useState(false);
 
@@ -53,11 +52,11 @@ export function Header({ collapsed, onToggle }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggle}
+            onClick={onMenuClick}
             className="md:hidden"
-            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            aria-label="Abrir menú"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            <Menu className="h-5 w-5" />
           </Button>
           {/* En escritorio el logo ya está en el sidebar */}
           <Link href="/workbench" className="flex items-center md:hidden" aria-label="Inicio">

@@ -103,11 +103,20 @@ export function useUploadExtracto() {
   const queryClient = useQueryClient();
   return useMutation<CargaUploadResponse, Error, CargaExtractoUpload>({
     mutationFn: (payload) => bancosApi.uploadExtracto(payload),
-    onSuccess: () => {
+    onSuccess: (r) => {
       // Claves raíz: refresca TODAS las páginas/filtros del historial y los pendientes
-      queryClient.invalidateQueries({ queryKey: bancosKeys.cargasAll() });
-      queryClient.invalidateQueries({ queryKey: bancosKeys.movimientosAll() });
-      queryClient.invalidateQueries({ queryKey: ["conciliacion"] });
+      const refrescar = () => {
+        queryClient.invalidateQueries({ queryKey: bancosKeys.cargasAll() });
+        queryClient.invalidateQueries({ queryKey: bancosKeys.movimientosAll() });
+        queryClient.invalidateQueries({ queryKey: bancosKeys.cuentas() });
+        queryClient.invalidateQueries({ queryKey: ["conciliacion"] });
+      };
+      refrescar();
+      // El Auto-Match corre en segundo plano en el servidor: se vuelve a consultar cuando termina
+      if (r.auto_match_en_curso) {
+        setTimeout(refrescar, 15000);
+        setTimeout(refrescar, 45000);
+      }
     },
   });
 }

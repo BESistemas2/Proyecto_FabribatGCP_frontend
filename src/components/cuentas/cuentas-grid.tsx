@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils/cn';
 import { CuentaBancaria } from '@/types/bancos';
 import { CuentaCard, CuentaCardSkeleton } from './cuenta-card';
@@ -47,13 +46,10 @@ export function CuentasGrid({
     );
   }, [cuentas, searchTerm]);
 
-  const activeCount = cuentas.filter(c => c.rpa_habilitado || c.auto_match_habilitado).length;
-  const rpaEnabledCount = cuentas.filter(c => c.rpa_habilitado).length;
-  const autoMatchEnabledCount = cuentas.filter(c => c.auto_match_habilitado).length;
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
         {[1, 2, 3, 4].map((i) => (
           <CuentaCardSkeleton key={i} />
         ))}
@@ -99,7 +95,7 @@ export function CuentasGrid({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
-              Catálogo de Cuentas Bancarias
+              Cuentas
               <Badge variant="secondary" className="ml-2">
                 {filteredCuentas.length} de {cuentas.length}
               </Badge>
@@ -136,28 +132,9 @@ export function CuentasGrid({
         </CardHeader>
 
         <CardContent className="pt-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
-            <div className="text-center p-2">
-              <p className="text-2xl font-bold text-primary">{cuentas.length}</p>
-              <p className="text-xs text-muted-foreground">Total Cuentas</p>
-            </div>
-            <div className="text-center p-2">
-              <p className="text-2xl font-bold text-blue-600">{rpaEnabledCount}</p>
-              <p className="text-xs text-muted-foreground">RPA Activo</p>
-            </div>
-            <div className="text-center p-2">
-              <p className="text-2xl font-bold text-purple-600">{autoMatchEnabledCount}</p>
-              <p className="text-xs text-muted-foreground">Auto-Match Activo</p>
-            </div>
-            <div className="text-center p-2">
-              <p className="text-2xl font-bold text-green-600">{activeCount}</p>
-              <p className="text-xs text-muted-foreground">Con algún servicio</p>
-            </div>
-          </div>
+          {/* Los totales se muestran arriba, en las tarjetas KPI de la página */}
 
-          <Separator className="mb-4" />
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
             {filteredCuentas.map((cuenta) => (
               <CuentaCard
                 key={cuenta.id_cuenta}

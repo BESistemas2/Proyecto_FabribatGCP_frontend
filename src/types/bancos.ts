@@ -25,6 +25,10 @@ export interface CuentaBancaria {
   codigo_banco_bc?: string;
   estado_rpa: EstadoRPA;
   ultima_sincronizacion?: string;
+  /** Última ejecución automática del Auto-Match (programada o tras una carga) */
+  auto_match_ultima_ejecucion?: string | null;
+  /** "OK · programado · 2026-10: 12 cruces, 3 pendientes" / "ERROR · ..." */
+  auto_match_ultimo_resultado?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -94,6 +98,8 @@ export interface CargaUploadResponse {
   saldo_inicial?: number | null;
   saldo_final?: number | null;
   advertencias: string[];
+  /** true si el backend lanzó el Auto-Match en segundo plano tras la carga */
+  auto_match_en_curso?: boolean;
 }
 
 export interface CargaExtractoUpload {
