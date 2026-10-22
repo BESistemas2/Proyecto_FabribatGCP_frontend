@@ -8,7 +8,6 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  Eye,
   Table as TableIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -250,7 +249,6 @@ export function DropzoneUploader({
   const [validationResult, setValidationResult] =
     useState<FileValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   // Evita que el resultado de un archivo anterior pise al del archivo elegido después
   const validacionActual = useRef(0);
 
@@ -335,7 +333,6 @@ export function DropzoneUploader({
   const removeFile = useCallback(() => {
     setSelectedFile(null);
     setValidationResult(null);
-    setIsPreviewOpen(false);
     onFileValidated(new File([], ""), {
       valid: false,
       errors: [],
@@ -438,10 +435,10 @@ export function DropzoneUploader({
                     </Badge>
 
                     {validationResult.preview && (
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-3 border rounded-lg bg-background shadow-xs">
+                      <div className="flex items-center gap-2.5 p-3 border rounded-lg bg-background shadow-xs">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
                           <TableIcon className="h-4 w-4 text-primary shrink-0" />
-                          <span className="truncate">
+                          <span>
                             <strong className="font-semibold text-foreground">
                               {validationResult.preview.totalRows}
                             </strong>{" "}
@@ -452,16 +449,6 @@ export function DropzoneUploader({
                             columnas
                           </span>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsPreviewOpen(true)}
-                          className="gap-1.5 h-8 text-xs font-medium w-full sm:w-auto shrink-0 justify-center"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-primary" />
-                          Ver Tabla Completa
-                        </Button>
                       </div>
                     )}
                   </div>
@@ -471,94 +458,6 @@ export function DropzoneUploader({
           </CardContent>
         </Card>
 
-        {/* MODAL PERSONALIZADO SIN RADIX UI */}
-        {isPreviewOpen && validationResult.preview && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0"
-            onClick={() => setIsPreviewOpen(false)}
-          >
-            <div
-              className="relative bg-background border rounded-lg shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col p-4 overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Encabezado del Modal */}
-              <div className="flex items-start justify-between border-b pb-3 mb-3">
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-base flex items-center gap-2 text-foreground">
-                    <FileText className="h-5 w-5 text-primary shrink-0" />
-                    Vista Previa del Extracto: {selectedFile.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Muestra de las primeras filas (
-                    {validationResult.preview.totalRows} filas en la vista previa)
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Cerrar modal"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Tabla de Datos */}
-              <div className="flex-1 overflow-auto border rounded-md my-1 bg-card">
-                <table className="w-full text-xs border-collapse">
-                  <thead className="bg-muted sticky top-0 z-10">
-                    <tr className="text-left text-muted-foreground border-b">
-                      <th className="p-2 font-mono w-10 text-center border-r bg-muted">
-                        #
-                      </th>
-                      {validationResult.preview.headers.map((h, i) => (
-                        <th
-                          key={i}
-                          className="p-2.5 font-semibold whitespace-nowrap border-r last:border-r-0 bg-muted"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {validationResult.preview.rows.map((row, ri) => (
-                      <tr
-                        key={ri}
-                        className="border-b hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="p-2 font-mono text-center text-muted-foreground bg-muted/20 border-r">
-                          {ri + 1}
-                        </td>
-                        {row.map((cell, ci) => (
-                          <td
-                            key={ci}
-                            className="p-2 font-mono whitespace-nowrap border-r last:border-r-0"
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pie del Modal */}
-              <div className="flex justify-end pt-3 mt-2 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="px-4 text-xs font-medium"
-                >
-                  Cerrar Vista Previa
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </>
     );
   }
