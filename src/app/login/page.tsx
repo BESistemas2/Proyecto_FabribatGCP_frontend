@@ -8,7 +8,6 @@ import {
   CheckCircle,
   Mail,
   Lock,
-  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +25,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { CORPORATE_DOMAIN } from "@/lib/api/auth";
 import { redireccionSegura } from "@/lib/auth/session";
 import { GoogleButton } from "@/components/auth/google-button";
+import { BrandLogo } from "@/components/shared/brand-logo";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -130,15 +130,10 @@ function LoginContent() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Building2 className="h-10 w-10 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Fabribat</h1>
+          <BrandLogo variant="vertical" priority className="mx-auto h-32 mb-5" />
+          <h1 className="text-2xl font-bold tracking-tight">Fabribat</h1>
           <p className="text-muted-foreground mt-1">
             Conciliación Bancaria & Automatización ETL
-          </p>
-          <p className="text-xs text-muted-foreground/70 mt-2">
-            Baterías Ecuador
           </p>
         </div>
 
@@ -179,9 +174,7 @@ function LoginContent() {
               />
             </div>
 
-            <Separator className="my-4">
-              <span className="text-xs text-muted-foreground px-2">o</span>
-            </Separator>
+            <Separator className="my-4" />
 
             <div className="text-center text-sm text-muted-foreground space-y-1">
               <p>

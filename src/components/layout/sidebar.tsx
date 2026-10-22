@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ChevronRight, Banknote, Activity, FileText, Settings, UploadCloud, LayoutDashboard } from 'lucide-react';
+import { BrandLogo } from '@/components/shared/brand-logo';
+import { ChevronLeft, ChevronRight, Activity, FileText, Settings, UploadCloud, LayoutDashboard } from 'lucide-react';
 
 interface NavItem {
   name: string;
@@ -30,9 +31,8 @@ export function Sidebar({ navigation, pathname, collapsed, onToggle }: SidebarPr
     >
       <div className="flex h-16 items-center justify-between px-4 border-b">
         {!collapsed && (
-          <Link href="/workbench" className="flex items-center gap-2">
-            <Banknote className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">Fabribat</span>
+          <Link href="/workbench" className="flex items-center" aria-label="Inicio">
+            <BrandLogo variant="horizontal" priority className="h-10" />
           </Link>
         )}
         <Button

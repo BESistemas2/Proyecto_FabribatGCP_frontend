@@ -24,9 +24,9 @@ import {
   User,
   Settings,
   Shield,
-  Banknote,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { BrandLogo } from '@/components/shared/brand-logo';
 
 interface HeaderProps {
   collapsed: boolean;
@@ -59,16 +59,16 @@ export function Header({ collapsed, onToggle }: HeaderProps) {
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
-          <Link href="/workbench" className="flex items-center gap-2">
-            <Banknote className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">Fabribat</span>
+          {/* En escritorio el logo ya está en el sidebar */}
+          <Link href="/workbench" className="flex items-center md:hidden" aria-label="Inicio">
+            <BrandLogo variant="horizontal" className="h-8" />
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="hidden md:block text-right">
             <p className="text-sm font-medium">Conciliación Bancaria</p>
-            <p className="text-xs text-muted-foreground">Baterías Ecuador</p>
+            <p className="text-xs text-muted-foreground">Fabribat</p>
           </div>
 
           {isAuthenticated && user && (
