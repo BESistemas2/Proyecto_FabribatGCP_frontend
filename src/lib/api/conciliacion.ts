@@ -15,6 +15,26 @@ function nombreDesdeHeader(header?: string): string | null {
   return m ? m[1] : null;
 }
 
+/** Descarga un .xlsx recibido como blob, con el nombre que envía el backend. */
+function guardarExcel(
+  response: { data: BlobPart; headers: Record<string, unknown> },
+  porDefecto: string,
+  forzado?: string,
+) {
+  const blob = new Blob([response.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download =
+    forzado || nombreDesdeHeader(response.headers["content-disposition"] as string | undefined) || porDefecto;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+}
+
 export const conciliacionApi = {
   // Libro de bancos de BC (pendientes del periodo) para una cuenta bancaria
   getMayorEditado: async (idCuenta: string, fechaInicio: string, fechaFin: string) => {
@@ -63,18 +83,17 @@ export const conciliacionApi = {
 
   descargarExcelActa: async (idActa: string, nombreArchivo?: string): Promise<void> => {
     const response = await apiClient.get(`/conciliacion/actas/${idActa}/exportar-excel`, { responseType: "blob" });
-    const blob = new Blob([response.data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    guardarExcel(response, `Informe_Conciliacion_${idActa}.xlsx`, nombreArchivo);
+  },
+
+  /** Excel "Detalle de cruces": qué cruzó con qué (y con qué regla), reversos y pendientes con observación. */
+  descargarDetalleCruces: async (idCuenta: string, fechaInicio: string, fechaFin: string): Promise<void> => {
+    const response = await apiClient.get("/conciliacion/reporte-cruces", {
+      params: { id_cuenta: idCuenta, fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      responseType: "blob",
+      timeout: 120000,
     });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download =
-      nombreArchivo || nombreDesdeHeader(response.headers["content-disposition"]) || `Informe_Conciliacion_${idActa}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    guardarExcel(response, `Detalle_Cruces_${fechaInicio.substring(0, 7)}.xlsx`);
   },
 
   enviarReporteEmail: async (idActa: string, payload: { destinatarios: string[]; comentario?: string }) => {

@@ -14,6 +14,7 @@ import { MoneyFormat } from '@/components/shared/money-format';
 import { formatDate, sumarMontos } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
 import { RuleBadge } from '@/components/workbench/rule-badge';
+import { DetalleCrucesButton } from '@/components/workbench/detalle-cruces-button';
 import { ResultadoConciliacionResponse } from '@/types/conciliacion';
 import type { PartidaTransito } from '@/types/conciliacion';
 import { useActaDetalle, useCerrarActa, useReabrirActa } from '@/lib/hooks/use-conciliacion';
@@ -262,6 +263,15 @@ export function PartidasTransitoDrawer({
               Descargar Excel
             </Button>
           )}
+          {acta?.id_cuenta && (
+            <DetalleCrucesButton
+              size="default"
+              className="gap-2"
+              idCuenta={acta.id_cuenta}
+              fechaInicio={acta.fecha_inicio || `${acta.periodo}-01`}
+              fechaFin={acta.fecha_fin || finDeMes(acta.periodo)}
+            />
+          )}
           {puedeOperar && enBorrador && (
             <Button variant="secondary" onClick={() => cambiarEstado('cerrar')} disabled={cerrarMutation.isPending}>
               {cerrarMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
@@ -284,4 +294,10 @@ export function PartidasTransitoDrawer({
 }
 
 // Los montos ya vienen con signo: el total es la suma directa (neto)
+/** '2026-08' -> '2026-08-31' */
+const finDeMes = (periodo: string) => {
+  const [anio, mes] = periodo.split('-').map(Number);
+  return `${periodo}-${String(new Date(anio, mes, 0).getDate()).padStart(2, '0')}`;
+};
+
 const getTotal = (partidas: PartidaTransito[]) => sumarMontos(partidas, (p) => p.monto);

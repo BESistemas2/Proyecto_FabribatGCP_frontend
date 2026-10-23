@@ -15,6 +15,7 @@ import { AutoMatchButton } from "@/components/workbench/auto-match-button";
 import { SplitView } from "@/components/workbench/split-view";
 import { ConciliadosView } from "@/components/workbench/conciliados-view";
 import { EnviarReporteModal } from "@/components/workbench/enviar-reporte-modal";
+import { DetalleCrucesButton } from "@/components/workbench/detalle-cruces-button";
 import {
   useCuentasBancarias,
   useMovimientosPendientes,
@@ -187,6 +188,9 @@ export default function WorkbenchPage() {
             <Badge variant={actaCerrada ? "secondary" : "outline"} className="text-xs">
               Acta {periodo}: {actaActual.estado}
             </Badge>
+          )}
+          {filtrosListos && (
+            <DetalleCrucesButton idCuenta={selectedCuentaId} fechaInicio={fechaInicio} fechaFin={fechaFin} />
           )}
           {puedeOperar && actaActual && (
             <EnviarReporteModal idActa={actaActual.id_acta} defaultEmail={userEmail} />
