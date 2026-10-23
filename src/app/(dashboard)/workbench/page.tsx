@@ -84,6 +84,22 @@ export default function WorkbenchPage() {
         !!fechaFin,
     );
 
+  // Filtro de la vista de conciliados por regla (leyenda): reglas desactivadas
+  const [reglasOcultas, setReglasOcultas] = useState<Set<string>>(() => new Set());
+  const alternarRegla = useCallback((regla: string) => {
+    setReglasOcultas((prev) => {
+      const sig = new Set(prev);
+      if (sig.has(regla)) sig.delete(regla);
+      else sig.add(regla);
+      return sig;
+    });
+  }, []);
+  const conteosPorRegla = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const g of gruposConciliados ?? []) c[g.regla_aplicada] = (c[g.regla_aplicada] ?? 0) + 1;
+    return c;
+  }, [gruposConciliados]);
+
   const movimientosErp = useMemo(() => mayorData?.data ?? [], [mayorData]);
   const novedadesSync = mayorData?.novedades_sync;
   const autoMatchMutation = useEjecutarAutoMatch();
@@ -287,7 +303,16 @@ export default function WorkbenchPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <RuleLegend />
+            {vistaModo === "conciliados" ? (
+              <RuleLegend
+                onToggle={alternarRegla}
+                ocultas={reglasOcultas}
+                conteos={conteosPorRegla}
+                onMostrarTodas={() => setReglasOcultas(new Set())}
+              />
+            ) : (
+              <RuleLegend />
+            )}
           </CardContent>
         </Card>
       )}
@@ -353,6 +378,7 @@ export default function WorkbenchPage() {
               <ConciliadosView
                 grupos={gruposConciliados || []}
                 isLoading={conciliadosLoading}
+                reglasOcultas={reglasOcultas}
               />
             </div>
           </CardContent>

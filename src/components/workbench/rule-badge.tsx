@@ -72,18 +72,77 @@ function getRuleIcon(regla: ReglaCruce) {
   }
 }
 
-export function RuleLegend() {
+interface RuleLegendProps {
+  /** Si se indica, las reglas funcionan como filtro (clic para mostrar u ocultar sus cruces). */
+  onToggle?: (regla: string) => void;
+  /** Reglas desactivadas en el filtro. */
+  ocultas?: ReadonlySet<string>;
+  /** Cruces por regla en la vista actual. */
+  conteos?: Record<string, number>;
+  onMostrarTodas?: () => void;
+}
+
+export function RuleLegend({ onToggle, ocultas, conteos, onMostrarTodas }: RuleLegendProps = {}) {
+  const filtrable = !!onToggle;
+  const hayOcultas = !!ocultas && ocultas.size > 0;
+
   return (
     <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg">
-      <span className="text-xs font-medium text-muted-foreground">Reglas:</span>
+      <span className="text-xs font-medium text-muted-foreground">
+        {filtrable ? 'Filtrar por regla:' : 'Reglas:'}
+      </span>
       <div className="flex flex-wrap gap-2">
-        {Object.entries(REGLAS_CRUCE_CONFIG).map(([key, config]) => (
-          <Badge key={key} variant="outline" title={`${config.label}: ${config.descripcion}`} className={cn(config.className, 'cursor-help text-xs gap-1 px-2 py-1')}>
-            {getRuleIcon(key as ReglaCruce)}
-            {config.shortLabel}
-          </Badge>
-        ))}
+        {Object.entries(REGLAS_CRUCE_CONFIG).map(([key, config]) => {
+          const contenido = (
+            <>
+              {getRuleIcon(key as ReglaCruce)}
+              {config.shortLabel}
+              {conteos && (
+                <span className="ml-0.5 rounded-full bg-background/70 px-1.5 text-[10px] font-semibold tabular-nums">
+                  {conteos[key] ?? 0}
+                </span>
+              )}
+            </>
+          );
+          if (!filtrable) {
+            return (
+              <Badge key={key} variant="outline" title={`${config.label}: ${config.descripcion}`}
+                     className={cn(config.className, 'cursor-help text-xs gap-1 px-2 py-1')}>
+                {contenido}
+              </Badge>
+            );
+          }
+          const activa = !ocultas?.has(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={activa}
+              onClick={() => onToggle!(key)}
+              title={`${config.label}: ${config.descripcion}\n${activa ? 'Clic para ocultar sus cruces' : 'Clic para mostrar sus cruces'}`}
+              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            >
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-xs gap-1 px-2 py-1 cursor-pointer transition-all select-none',
+                  activa
+                    ? cn(config.className, 'hover:brightness-95')
+                    : 'bg-background text-muted-foreground border-dashed opacity-60 line-through hover:opacity-90',
+                )}
+              >
+                {contenido}
+              </Badge>
+            </button>
+          );
+        })}
       </div>
+      {filtrable && hayOcultas && onMostrarTodas && (
+        <button type="button" onClick={onMostrarTodas}
+                className="text-xs font-medium text-primary underline-offset-2 hover:underline">
+          Mostrar todas
+        </button>
+      )}
     </div>
   );
 }

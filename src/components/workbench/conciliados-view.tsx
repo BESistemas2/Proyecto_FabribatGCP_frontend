@@ -24,6 +24,8 @@ interface ConciliadosViewProps {
   grupos?: GrupoConciliado[];
   isLoading?: boolean;
   onDesconciliar?: (idConciliacion: string) => void;
+  /** Reglas desactivadas en el filtro de la leyenda: sus cruces no se muestran. */
+  reglasOcultas?: ReadonlySet<string>;
 }
 
 // Etiqueta y color de la regla: mismo catálogo que el resto de la app
@@ -61,6 +63,7 @@ export function ConciliadosView({
   grupos = [],
   isLoading = false,
   onDesconciliar,
+  reglasOcultas,
 }: ConciliadosViewProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
@@ -69,7 +72,10 @@ export function ConciliadosView({
     setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const gruposFiltrados = (grupos || []).filter((g) => {
+  const gruposPorRegla = (grupos || []).filter((g) => !reglasOcultas?.has(g.regla_aplicada));
+  const filtradoPorRegla = gruposPorRegla.length < (grupos || []).length;
+
+  const gruposFiltrados = gruposPorRegla.filter((g) => {
     const term = search.toLowerCase();
     const ref = (g.banco?.referencia || "").toLowerCase();
     const conc = (g.banco?.concepto || "").toLowerCase();
@@ -106,7 +112,8 @@ export function ConciliadosView({
           />
         </div>
         <div className="text-xs text-muted-foreground font-mono">
-          Mostrando <strong>{gruposFiltrados.length}</strong> cruces realizados
+          Mostrando <strong>{gruposFiltrados.length}</strong>
+          {gruposFiltrados.length !== (grupos || []).length && <> de {(grupos || []).length}</>} cruces realizados
         </div>
       </div>
 
@@ -115,12 +122,23 @@ export function ConciliadosView({
         {gruposFiltrados.length === 0 ? (
           <div className="py-16 text-center text-muted-foreground">
             <CheckCircle2 className="h-10 w-10 mx-auto mb-2 opacity-40 text-muted-foreground" />
-            <p className="text-sm font-medium">
-              No hay registros conciliados en este período
-            </p>
-            <p className="text-xs mt-1">
-              Los movimientos que concilies aparecerán agrupados en esta vista.
-            </p>
+            {(grupos || []).length > 0 ? (
+              <>
+                <p className="text-sm font-medium">Ningún cruce coincide con el filtro</p>
+                <p className="text-xs mt-1">
+                  {filtradoPorRegla
+                    ? "Active más reglas en la leyenda o cambie la búsqueda."
+                    : "Pruebe con otro texto de búsqueda."}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium">No hay registros conciliados en este período</p>
+                <p className="text-xs mt-1">
+                  Los movimientos que concilies aparecerán agrupados en esta vista.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="divide-y">
