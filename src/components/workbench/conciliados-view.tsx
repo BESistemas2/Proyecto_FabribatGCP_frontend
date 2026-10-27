@@ -85,7 +85,10 @@ export function ConciliadosView({
         (p.external_document_no || "").toLowerCase().includes(term) ||
         (p.concepto || "").toLowerCase().includes(term),
     );
-    return ref.includes(term) || conc.includes(term) || matchBC;
+    const matchBanco = (g.movimientos_banco || []).some(
+      (m) => (m.referencia || "").toLowerCase().includes(term) || (m.concepto || "").toLowerCase().includes(term),
+    ) || (g.referencia_reverso || "").includes(term);
+    return ref.includes(term) || conc.includes(term) || matchBC || matchBanco;
   });
 
   if (isLoading) {
@@ -146,6 +149,8 @@ export function ConciliadosView({
               const isExpanded = !!expandedRows[grupo.id_conciliacion];
               const reglaInfo = getReglaBadge(grupo.regla_aplicada);
               const totalBC = sumarMontos(grupo.partidas_bc || [], (p) => p.monto);
+              const movsBanco = grupo.movimientos_banco || [];
+              const esReversoBanco = movsBanco.length > 0;
 
               return (
                 <div key={grupo.id_conciliacion} className="transition-colors">
@@ -181,7 +186,7 @@ export function ConciliadosView({
                           {reglaInfo.label}
                         </Badge>
                         <span className="text-muted-foreground">
-                          {formatDateLocal(grupo.banco?.fecha ?? grupo.partidas_bc?.[0]?.fecha)}
+                          {formatDateLocal(grupo.banco?.fecha ?? movsBanco[0]?.fecha ?? grupo.partidas_bc?.[0]?.fecha)}
                         </span>
                       </div>
 
@@ -195,6 +200,10 @@ export function ConciliadosView({
                               {grupo.banco.concepto}
                             </span>
                           </>
+                        ) : esReversoBanco ? (
+                          <span className="font-sans text-muted-foreground">
+                            REF {grupo.referencia_reverso || movsBanco[0]?.referencia} · pago reversado por el banco (sin asiento en BC)
+                          </span>
                         ) : (
                           <span className="font-sans text-muted-foreground">
                             Doc. {grupo.partidas_bc?.[0]?.num_documento} · se anula dentro de BC (sin movimiento bancario)
@@ -209,10 +218,9 @@ export function ConciliadosView({
                           {grupo.banco ? formatMoneyLocal(grupo.banco.monto) : formatMoneyLocal(0)}
                         </span>
                         <p className="text-[10px] text-muted-foreground">
-                          {(grupo.partidas_bc || []).length}{" "}
-                          {grupo.partidas_bc?.length === 1
-                            ? "asiento BC"
-                            : "asientos BC"}
+                          {esReversoBanco
+                            ? `${movsBanco.length} movimientos del banco`
+                            : `${(grupo.partidas_bc || []).length} ${grupo.partidas_bc?.length === 1 ? "asiento BC" : "asientos BC"}`}
                         </p>
                       </div>
 
@@ -237,12 +245,36 @@ export function ConciliadosView({
                   {/* Fila Desplegable: PARTIDAS VINCULADAS D365 BC */}
                   {isExpanded && (
                     <div className="bg-muted/20 border-t border-b p-3 pl-12 space-y-2 animate-in fade-in-50">
+                      {esReversoBanco && (
+                        <>
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground pb-1 border-b">
+                            <span>MOVIMIENTOS DEL BANCO QUE SE ANULAN ENTRE SÍ</span>
+                            <span>Suma: {formatMoneyLocal(sumarMontos(movsBanco, (m) => m.monto))}</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {movsBanco.map((m) => (
+                              <div key={m.id_movimiento_banco}
+                                   className="flex items-center justify-between bg-background p-2 rounded border text-xs font-mono">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <span className="font-bold text-foreground shrink-0">{m.referencia}</span>
+                                  <span className="text-muted-foreground truncate">{m.concepto}</span>
+                                </div>
+                                <span className={cn("font-semibold shrink-0", m.monto < 0 ? "text-destructive" : "text-foreground")}>
+                                  {formatMoneyLocal(m.monto)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {!esReversoBanco && (
                       <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground pb-1 border-b">
                         <span>
                           ASIENTOS CONTABLES EN DYNAMICS 365 BC (LIBRO MAYOR)
                         </span>
                         <span>Suma BC: {formatMoneyLocal(totalBC)}</span>
                       </div>
+                      )}
 
                       <div className="space-y-1.5">
                         {(grupo.partidas_bc || []).map((partida) => (

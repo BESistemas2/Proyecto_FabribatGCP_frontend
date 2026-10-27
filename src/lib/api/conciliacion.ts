@@ -6,6 +6,7 @@ import type {
   MayorEditadoResponse,
   ResultadoConciliacionResponse,
 } from "@/types/conciliacion";
+import type { CorteInicial, CorteInicialPayload, DashboardResponse } from "@/types/dashboard";
 
 export type { ActaDetalleResponse, PartidaTransito } from "@/types/conciliacion";
 
@@ -94,6 +95,24 @@ export const conciliacionApi = {
       timeout: 120000,
     });
     guardarExcel(response, `Detalle_Cruces_${fechaInicio.substring(0, 7)}.xlsx`);
+  },
+
+  getDashboard: async (params: { desde: string; hasta: string; banco?: string | null; id_cuenta?: string | null }) => {
+    const { data } = await apiClient.get<DashboardResponse>("/conciliacion/dashboard", {
+      params: { desde: params.desde, hasta: params.hasta, banco: params.banco || undefined, id_cuenta: params.id_cuenta || undefined },
+      timeout: 120000,
+    });
+    return data;
+  },
+
+  getCorteInicial: async (idCuenta: string): Promise<CorteInicial | null> => {
+    const { data } = await apiClient.get<CorteInicial | null>(`/conciliacion/cortes/${idCuenta}`);
+    return data;
+  },
+
+  guardarCorteInicial: async (idCuenta: string, payload: CorteInicialPayload): Promise<CorteInicial> => {
+    const { data } = await apiClient.put<CorteInicial>(`/conciliacion/cortes/${idCuenta}`, payload);
+    return data;
   },
 
   enviarReporteEmail: async (idActa: string, payload: { destinatarios: string[]; comentario?: string }) => {

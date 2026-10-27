@@ -16,6 +16,7 @@ interface CuentasGridProps {
   isLoading?: boolean;
   isSyncing?: boolean;
   onConfigClick: (cuenta: CuentaBancaria) => void;
+  onCorteClick?: (cuenta: CuentaBancaria) => void;
   onRpaToggle: (idCuenta: string, enabled: boolean) => Promise<void>;
   onAutoMatchToggle: (idCuenta: string, enabled: boolean) => Promise<void>;
   onSyncClick: () => void;
@@ -27,6 +28,7 @@ export function CuentasGrid({
   isLoading = false,
   isSyncing = false,
   onConfigClick,
+  onCorteClick,
   onRpaToggle,
   onAutoMatchToggle,
   onSyncClick,
@@ -140,6 +142,7 @@ export function CuentasGrid({
                 key={cuenta.id_cuenta}
                 cuenta={cuenta}
                 onConfigClick={onConfigClick}
+                onCorteClick={onCorteClick}
                 onRpaToggle={onRpaToggle}
                 onAutoMatchToggle={onAutoMatchToggle}
                 isUpdating={isSyncing}

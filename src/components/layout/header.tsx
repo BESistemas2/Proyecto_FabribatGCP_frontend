@@ -60,7 +60,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </Button>
           {/* En escritorio el logo ya está en el sidebar */}
-          <Link href="/workbench" className="flex items-center md:hidden" aria-label="Inicio">
+          <Link href="/dashboard" className="flex items-center md:hidden" aria-label="Inicio">
             <BrandLogo variant="horizontal" className="h-8" />
           </Link>
         </div>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const TOKEN_COOKIE = "fabribat_auth_token";
-const RUTAS_PROTEGIDAS = ["/workbench", "/cargas", "/actas", "/cuentas", "/admin"];
+const RUTAS_PROTEGIDAS = ["/dashboard", "/workbench", "/cargas", "/actas", "/cuentas", "/admin"];
 
 /** true si la cookie tiene un JWT aún vigente (solo UX: la seguridad real está en la API). */
 function tokenVigente(token: string | undefined): boolean {
@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
   if (pathname === "/login") {
     // Con sesión vigente no tiene sentido ver el login (salvo que venga de una expiración)
     if (sesion && searchParams.get("expired") !== "1") {
-      return NextResponse.redirect(new URL("/workbench", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
   }

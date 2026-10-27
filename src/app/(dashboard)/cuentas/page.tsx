@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CuentasGrid } from "@/components/cuentas/cuentas-grid";
 import { CuentaConfigDrawer } from "@/components/cuentas/cuenta-config-drawer";
+import { CorteInicialDrawer } from "@/components/cuentas/corte-inicial-drawer";
 import {
   useCuentasBancarias,
   useUpdateCuentaBancaria,
@@ -58,6 +59,9 @@ export default function CuentasPage() {
     setDrawerOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [esAdmin]);
+
+  // Corte inicial: todos lo ven; ADMIN y CONTABILIDAD lo editan (el drawer lo controla)
+  const [corteCuenta, setCorteCuenta] = useState<CuentaBancaria | null>(null);
 
   const handleCloseDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -239,6 +243,7 @@ export default function CuentasPage() {
           isLoading={cuentasLoading}
           isSyncing={sincronizarMutation.isPending}
           onConfigClick={handleConfigClick}
+          onCorteClick={setCorteCuenta}
           onRpaToggle={handleRpaToggle}
           onAutoMatchToggle={handleAutoMatchToggle}
           onSyncClick={handleSyncClick}
@@ -249,6 +254,11 @@ export default function CuentasPage() {
         cuenta={selectedCuenta}
         open={drawerOpen}
         onOpenChange={handleCloseDrawer}
+      />
+      <CorteInicialDrawer
+        cuenta={corteCuenta}
+        open={!!corteCuenta}
+        onOpenChange={(o) => { if (!o) setCorteCuenta(null); }}
       />
     </div>
   );

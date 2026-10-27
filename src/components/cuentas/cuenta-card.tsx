@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, CreditCard, Hash, Settings, ChevronRight, CheckCircle, Clock } from 'lucide-react';
+import { Building2, CreditCard, Hash, Settings, ChevronRight, CheckCircle, Clock, Flag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,8 @@ import { describirFrecuencia, resumenUltimaEjecucion } from '@/lib/utils/auto-ma
 interface CuentaCardProps {
   cuenta: CuentaBancaria;
   onConfigClick: (cuenta: CuentaBancaria) => void;
+  /** Corte inicial (saldos y partidas de arranque de la conciliación) */
+  onCorteClick?: (cuenta: CuentaBancaria) => void;
   onRpaToggle: (idCuenta: string, enabled: boolean) => Promise<void>;
   onAutoMatchToggle: (idCuenta: string, enabled: boolean) => Promise<void>;
   isUpdating?: boolean;
@@ -23,6 +25,7 @@ interface CuentaCardProps {
 export function CuentaCard({
   cuenta,
   onConfigClick,
+  onCorteClick,
   onRpaToggle,
   onAutoMatchToggle,
   isUpdating = false,
@@ -166,6 +169,21 @@ export function CuentaCard({
             </span>
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
+          {onCorteClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onCorteClick(cuenta)}
+              className="h-8 w-full justify-between px-2"
+              disabled={isUpdating}
+            >
+              <span className="flex items-center gap-1.5">
+                <Flag className="h-3.5 w-3.5" />
+                Corte inicial
+              </span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

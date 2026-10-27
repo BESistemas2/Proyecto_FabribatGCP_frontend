@@ -2,13 +2,14 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { FileText, LayoutDashboard, Loader2, Settings, UploadCloud, User } from "lucide-react";
+import { BarChart3, FileText, LayoutDashboard, Loader2, Settings, UploadCloud, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 const NAVEGACION = [
+  { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { name: "Workbench", href: "/workbench", icon: LayoutDashboard },
   { name: "Cargas ETL", href: "/cargas", icon: UploadCloud },
   { name: "Actas", href: "/actas", icon: FileText },

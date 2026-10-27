@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { conciliacionApi } from "@/lib/api/conciliacion";
+import type { CorteInicial, CorteInicialPayload, DashboardResponse } from "@/types/dashboard";
 import type { ActaDetalleResponse, EjecutarConciliacionPayload, MayorEditadoResponse, ResultadoConciliacionResponse } from "@/types/conciliacion";
 
 export const conciliacionKeys = {
@@ -11,7 +12,40 @@ export const conciliacionKeys = {
   actaDetalle: (idActa: string) => [...conciliacionKeys.all, "acta-detalle", idActa] as const,
   grupos: (idCuenta: string, fechaInicio: string, fechaFin: string) =>
     [...conciliacionKeys.all, "grupos", idCuenta, fechaInicio, fechaFin] as const,
+  dashboard: (desde: string, hasta: string, banco: string | null, idCuenta: string | null) =>
+    [...conciliacionKeys.all, "dashboard", desde, hasta, banco, idCuenta] as const,
+  corte: (idCuenta: string) => [...conciliacionKeys.all, "corte", idCuenta] as const,
 };
+
+export function useDashboard(desde: string, hasta: string, banco: string | null, idCuenta: string | null) {
+  return useQuery<DashboardResponse, Error>({
+    queryKey: conciliacionKeys.dashboard(desde, hasta, banco, idCuenta),
+    queryFn: () => conciliacionApi.getDashboard({ desde, hasta, banco, id_cuenta: idCuenta }),
+    enabled: !!desde && !!hasta,
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useCorteInicial(idCuenta: string | null | undefined, enabled = true) {
+  return useQuery<CorteInicial | null, Error>({
+    queryKey: conciliacionKeys.corte(idCuenta || ""),
+    queryFn: () => conciliacionApi.getCorteInicial(idCuenta!),
+    enabled: enabled && !!idCuenta,
+  });
+}
+
+export function useGuardarCorteInicial(idCuenta: string) {
+  const queryClient = useQueryClient();
+  return useMutation<CorteInicial, Error, CorteInicialPayload>({
+    mutationFn: (payload) => conciliacionApi.guardarCorteInicial(idCuenta, payload),
+    retry: false,
+    onSuccess: (data) => {
+      queryClient.setQueryData(conciliacionKeys.corte(idCuenta), data);
+      queryClient.invalidateQueries({ queryKey: [...conciliacionKeys.all, "dashboard"] });
+    },
+  });
+}
 
 /** Refresca todo lo que cambia tras conciliar, cerrar o reabrir. */
 function useInvalidarConciliacion() {

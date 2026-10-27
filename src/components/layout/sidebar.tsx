@@ -42,7 +42,7 @@ export function Sidebar({ navigation, pathname, collapsed, onToggle, mobileOpen,
     >
       <div className="flex h-16 items-center justify-between px-4 border-b">
         {!compacto && (
-          <Link href="/workbench" className="flex items-center" aria-label="Inicio" onClick={onMobileClose}>
+          <Link href="/dashboard" className="flex items-center" aria-label="Inicio" onClick={onMobileClose}>
             <BrandLogo variant="horizontal" priority className="h-10" />
           </Link>
         )}

@@ -58,7 +58,7 @@ export function limpiarSesion() {
 }
 
 /** Solo permite volver a rutas internas (evita redirecciones a otros sitios o javascript:). */
-export function redireccionSegura(destino: string | null | undefined, porDefecto = "/workbench"): string {
+export function redireccionSegura(destino: string | null | undefined, porDefecto = "/dashboard"): string {
   if (!destino || !destino.startsWith("/") || destino.startsWith("//") || destino.startsWith("/\\")) {
     return porDefecto;
   }

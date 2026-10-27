@@ -5,7 +5,8 @@ export type ReglaCruce =
   | "REGLA_2_PARCIAL"
   | "REGLA_4_SUBCONJUNTO_COMBINATORIO"
   | "REGLA_5_REF_ADICIONAL"
-  | "REGLA_REVERSO_BC";
+  | "REGLA_REVERSO_BC"
+  | "REGLA_REVERSO_BANCO";
 
 /** BORRADOR: se puede volver a conciliar. CERRADO: partidas congeladas (APROBADO: actas antiguas). */
 export type EstadoActa = "BORRADOR" | "CERRADO" | "APROBADO";
@@ -125,5 +126,16 @@ export interface GrupoConciliado {
     tipo: "CREDITO" | "DEBITO" | string;
   } | null;
   partidas_bc: MovimientoBCVinculado[];
+  /** Reversos dentro del banco (Banco Guayaquil): los movimientos que se anulan entre sí */
+  movimientos_banco?: {
+    id_movimiento_banco: string;
+    fecha: string;
+    concepto: string;
+    referencia: string;
+    monto: number;
+    tipo: "CREDITO" | "DEBITO" | string;
+  }[];
+  /** Número de REF/REF2 que une el pago con su reverso */
+  referencia_reverso?: string;
 }
 
