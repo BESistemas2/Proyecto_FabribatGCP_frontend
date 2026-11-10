@@ -190,7 +190,7 @@ export const REGLAS_CRUCE_CONFIG: Record<ReglaCruce, RuleConfig> = {
   REGLA_1_EXACTA: {
     label: 'Referencia + monto exacto',
     shortLabel: 'Exacto 1:1',
-    descripcion: 'Misma referencia y monto, con hasta 3 días de diferencia.',
+    descripcion: 'Misma referencia y monto, con hasta 7 días de diferencia.',
     variant: 'success',
     className: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-950 dark:text-green-300',
   },
@@ -204,14 +204,14 @@ export const REGLAS_CRUCE_CONFIG: Record<ReglaCruce, RuleConfig> = {
   REGLA_2_1_A_N_REF: {
     label: 'Consolidado 1:N por referencia',
     shortLabel: 'Consolidado 1:N',
-    descripcion: 'Un movimiento del banco contra varios asientos de la misma referencia que suman su monto.',
+    descripcion: 'Un movimiento del banco contra varios asientos de la misma referencia (de cualquier signo, p. ej. con un ajuste de $0,01) que suman su monto.',
     variant: 'success',
     className: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300',
   },
   REGLA_2_PARCIAL: {
     label: 'Monto + fecha',
     shortLabel: 'Monto + Fecha',
-    descripcion: 'Mismo monto en ±3 días y un único candidato posible.',
+    descripcion: 'Mismo monto y fecha (si hay varios iguales en ambos lados se emparejan en orden), o mismo monto en ±7 días con un único candidato.',
     variant: 'warning',
     className: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300',
   },
