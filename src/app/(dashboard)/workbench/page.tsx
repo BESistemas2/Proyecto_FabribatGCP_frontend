@@ -29,6 +29,7 @@ import {
   useActas,
 } from "@/lib/hooks/use-conciliacion";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { esMesCompleto, mesActual, rangoDeMes } from "@/lib/utils/periodo";
 
 export default function WorkbenchPage() {
   const { user, esAdmin, puedeOperar } = useAuth();
@@ -44,8 +45,9 @@ export default function WorkbenchPage() {
   const sincronizarMutation = useSincronizarCatalogo();
 
   const [selectedCuentaId, setSelectedCuentaId] = useState<string | null>(null);
-  const [fechaInicio, setFechaInicio] = useState<string>("");
-  const [fechaFin, setFechaFin] = useState<string>("");
+  // Por defecto, el mes en curso (el Auto-Match trabaja por mes completo)
+  const [fechaInicio, setFechaInicio] = useState<string>(() => rangoDeMes(mesActual().anio, mesActual().mes).inicio);
+  const [fechaFin, setFechaFin] = useState<string>(() => rangoDeMes(mesActual().anio, mesActual().mes).fin);
 
   const cuentaSeleccionada = cuentas?.find(
     (c) => c.id_cuenta === selectedCuentaId,
@@ -154,6 +156,8 @@ export default function WorkbenchPage() {
 
   const motivoSinAutoMatch = !puedeOperar
     ? "Su rol solo permite consultar"
+    : !esMesCompleto(fechaInicio, fechaFin)
+      ? "El Auto-Match se ejecuta por mes completo: elija un mes"
     : actaCerrada
       ? "El acta de este periodo está cerrada"
       : !tieneExtractoCargado

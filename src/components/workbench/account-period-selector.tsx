@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import {
   Calendar as CalendarIcon,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Banknote,
   Check,
 } from "lucide-react";
@@ -12,6 +14,15 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils/cn";
 import { getPeriodoLabel } from "@/lib/utils/format";
+import {
+  NOMBRES_MES,
+  esMesCompleto,
+  mesActual,
+  mesDeFecha,
+  moverMes,
+  nombreDeMes,
+  rangoDeMes,
+} from "@/lib/utils/periodo";
 import { CuentaBancaria } from "@/types/bancos";
 
 interface AccountPeriodSelectorProps {
@@ -24,7 +35,7 @@ interface AccountPeriodSelectorProps {
   disabled?: boolean;
 }
 
-type ActiveDropdown = "cuenta" | "periodo" | null;
+type ActiveDropdown = "cuenta" | "mes" | "periodo" | null;
 
 export function AccountPeriodSelector({
   cuentas,
@@ -43,6 +54,24 @@ export function AccountPeriodSelector({
   const [tempFin, setTempFin] = useState(fechaFin);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Mes del periodo: es la forma principal de elegir (el Auto-Match trabaja por mes completo)
+  const hoy = mesActual();
+  const mesCompleto = esMesCompleto(fechaInicio, fechaFin);
+  const base = fechaInicio ? mesDeFecha(fechaInicio) : hoy;
+  const [anioLista, setAnioLista] = useState(base.anio);
+  const esFuturo = (anio: number, mes: number) => anio * 12 + mes > hoy.anio * 12 + hoy.mes;
+
+  const elegirMes = (anio: number, mes: number) => {
+    const r = rangoDeMes(anio, mes);
+    setActiveDropdown(null);
+    onPeriodoChange(r.inicio, r.fin);
+  };
+  const desplazarMes = (delta: number) => {
+    const m = moverMes(base.anio, base.mes, delta);
+    if (!esFuturo(m.anio, m.mes)) elegirMes(m.anio, m.mes);
+  };
+  const siguiente = moverMes(base.anio, base.mes, 1);
 
   // Sincronizar fechas temporales cuando cambien las props
   useEffect(() => {
@@ -192,32 +221,80 @@ export function AccountPeriodSelector({
       </div>
 
       {/* 2. Desplegable de Selección de Período (Fechas) */}
-      <div className="relative w-full sm:w-[320px]">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() =>
-            setActiveDropdown(activeDropdown === "periodo" ? null : "periodo")
-          }
-          className={cn(
-            "w-full justify-between h-auto py-2.5 px-3 font-normal",
-            (!fechaInicio || !fechaFin) && "text-muted-foreground",
-          )}
-          disabled={disabled}
-        >
-          <div className="flex items-center gap-2 truncate">
+      <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
+        <div className="relative flex items-center rounded-md border bg-background">
+          <Button type="button" variant="ghost" size="icon" className="h-10 w-9 rounded-r-none"
+                  onClick={() => desplazarMes(-1)} disabled={disabled} aria-label="Mes anterior" title="Mes anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className={cn("h-10 min-w-[11.5rem] justify-center gap-2 rounded-none font-medium",
+              !fechaInicio && "text-muted-foreground")}
+            onClick={() => {
+              setAnioLista(base.anio);
+              setActiveDropdown(activeDropdown === "mes" ? null : "mes");
+            }}
+            disabled={disabled}
+          >
             <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">
-              {fechaInicio && fechaFin
-                ? getPeriodoLabel(fechaInicio, fechaFin)
-                : "Seleccionar período"}
-            </span>
-          </div>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+            {!fechaInicio || !fechaFin
+              ? "Seleccionar mes"
+              : mesCompleto
+                ? nombreDeMes(base.anio, base.mes)
+                : `${getPeriodoLabel(fechaInicio, fechaFin)} (rango)`}
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="h-10 w-9 rounded-l-none"
+                  onClick={() => desplazarMes(1)} disabled={disabled || esFuturo(siguiente.anio, siguiente.mes)}
+                  aria-label="Mes siguiente" title="Mes siguiente">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
 
+          {activeDropdown === "mes" && (
+            <div className="absolute top-full left-0 mt-2 z-50 w-72 rounded-md border bg-popover p-3 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
+              <div className="mb-2 flex items-center justify-between">
+                <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => setAnioLista(anioLista - 1)} aria-label="Año anterior">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-semibold">{anioLista}</span>
+                <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => setAnioLista(anioLista + 1)} disabled={anioLista >= hoy.anio}
+                        aria-label="Año siguiente">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                {NOMBRES_MES.map((nombre, k) => {
+                  const mes = k + 1;
+                  const activo = mesCompleto && base.anio === anioLista && base.mes === mes;
+                  return (
+                    <Button key={nombre} type="button" size="sm" variant={activo ? "default" : "ghost"}
+                            className="h-8 text-xs" disabled={esFuturo(anioLista, mes)}
+                            onClick={() => elegirMes(anioLista, mes)}>
+                      {nombre.slice(0, 3)}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Button type="button" variant="link" size="sm" className="h-auto px-1 text-xs text-muted-foreground"
+                onClick={() => setActiveDropdown(activeDropdown === "periodo" ? null : "periodo")}
+                disabled={disabled} title="Consultar un rango de días (el Auto-Match solo se ejecuta por mes completo)">
+          Rango personalizado
+        </Button>
+      </div>
+
+      <div className="relative w-full sm:w-0">
         {activeDropdown === "periodo" && (
           <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-50 max-h-[80dvh] max-w-[calc(100vw-2rem)] overflow-auto rounded-md border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
+            <p className="px-4 pt-3 text-xs text-muted-foreground">
+              Solo para consultar. El Auto-Match se ejecuta por mes completo.
+            </p>
             <div className="flex flex-col gap-4 p-4 sm:flex-row">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2">
@@ -226,6 +303,7 @@ export function AccountPeriodSelector({
                 <CalendarComponent
                   mode="single"
                   selected={parseLocalDate(tempInicio)}
+                  defaultMonth={parseLocalDate(tempInicio)}
                   onSelect={(date) => handleDateSelect(date, "inicio")}
                   disabled={disabled}
                 />
@@ -238,6 +316,7 @@ export function AccountPeriodSelector({
                 <CalendarComponent
                   mode="single"
                   selected={parseLocalDate(tempFin)}
+                  defaultMonth={parseLocalDate(tempFin)}
                   onSelect={(date) => handleDateSelect(date, "fin")}
                   disabled={disabled}
                 />
