@@ -16,6 +16,7 @@ import { SplitView } from "@/components/workbench/split-view";
 import { ConciliadosView } from "@/components/workbench/conciliados-view";
 import { EnviarReporteModal } from "@/components/workbench/enviar-reporte-modal";
 import { DetalleCrucesButton } from "@/components/workbench/detalle-cruces-button";
+import { GastosBancariosButton } from "@/components/workbench/gastos-bancarios-drawer";
 import {
   useCuentasBancarias,
   useMovimientosPendientes,
@@ -206,7 +207,10 @@ export default function WorkbenchPage() {
             </Badge>
           )}
           {filtrosListos && (
-            <DetalleCrucesButton idCuenta={selectedCuentaId} fechaInicio={fechaInicio} fechaFin={fechaFin} />
+            <>
+              <DetalleCrucesButton idCuenta={selectedCuentaId} fechaInicio={fechaInicio} fechaFin={fechaFin} />
+              <GastosBancariosButton idCuenta={selectedCuentaId} fechaInicio={fechaInicio} fechaFin={fechaFin} />
+            </>
           )}
           {puedeOperar && actaActual && (
             <EnviarReporteModal idActa={actaActual.id_acta} defaultEmail={userEmail} />

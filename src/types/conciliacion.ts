@@ -6,7 +6,8 @@ export type ReglaCruce =
   | "REGLA_4_SUBCONJUNTO_COMBINATORIO"
   | "REGLA_5_REF_ADICIONAL"
   | "REGLA_REVERSO_BC"
-  | "REGLA_REVERSO_BANCO";
+  | "REGLA_REVERSO_BANCO"
+  | "REGLA_GASTOS_BANCARIOS";
 
 /** BORRADOR: se puede volver a conciliar. CERRADO: partidas congeladas (APROBADO: actas antiguas). */
 export type EstadoActa = "BORRADOR" | "CERRADO" | "APROBADO";
@@ -137,5 +138,44 @@ export interface GrupoConciliado {
   }[];
   /** Número de REF/REF2 que une el pago con su reverso */
   referencia_reverso?: string;
+  /** Gastos bancarios: mes del grupo (AAAA-MM) */
+  mes?: string;
+}
+
+/** Gastos bancarios por mes (GET /conciliacion/gastos-bancarios) */
+export type EstadoGastosMes = "Esperando asiento" | "Conciliado" | "Revisar";
+
+export interface MovimientoGasto {
+  id_movimiento: string;
+  fecha: string;
+  referencia: string;
+  concepto: string;
+  categoria: string;
+  monto: number | string;
+  conciliado: boolean;
+}
+
+export interface GastosMes {
+  mes: string;
+  fecha_fin_mes: string;
+  fecha_asiento_desde: string;
+  estado: EstadoGastosMes;
+  total: number | string;
+  total_pendiente: number | string;
+  cantidad: number;
+  categorias: { categoria: string; monto: number | string }[];
+  movimientos: MovimientoGasto[];
+  asiento: { document_no: string; fecha: string; descripcion: string; monto: number | string; entry_no_bc: number } | null;
+}
+
+export interface GastosBancariosResponse {
+  id_cuenta: string;
+  banco: string;
+  numero_cuenta: string;
+  codigo_bc: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  tiene_patrones: boolean;
+  meses: GastosMes[];
 }
 

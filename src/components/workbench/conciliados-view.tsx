@@ -18,6 +18,17 @@ import { getReglaConfig } from "@/lib/constants/bancos";
 import { sumarMontos } from "@/lib/utils/format";
 
 import type { GrupoConciliado } from "@/types/conciliacion";
+
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+  "septiembre", "octubre", "noviembre", "diciembre"];
+
+/** "2026-08" o "2026-08-29" -> "agosto 2026" */
+function nombreMes(valor?: string): string {
+  if (!valor) return "";
+  const [anio, mes] = valor.split("-");
+  return `${MESES[Number(mes) - 1] ?? mes} ${anio}`;
+}
+
 export type { GrupoConciliado, MovimientoBCVinculado } from "@/types/conciliacion";
 
 interface ConciliadosViewProps {
@@ -150,7 +161,8 @@ export function ConciliadosView({
               const reglaInfo = getReglaBadge(grupo.regla_aplicada);
               const totalBC = sumarMontos(grupo.partidas_bc || [], (p) => p.monto);
               const movsBanco = grupo.movimientos_banco || [];
-              const esReversoBanco = movsBanco.length > 0;
+              const esGastos = grupo.regla_aplicada === "REGLA_GASTOS_BANCARIOS";
+              const esReversoBanco = movsBanco.length > 0 && !esGastos;
 
               return (
                 <div key={grupo.id_conciliacion} className="transition-colors">
@@ -200,6 +212,10 @@ export function ConciliadosView({
                               {grupo.banco.concepto}
                             </span>
                           </>
+                        ) : esGastos ? (
+                          <span className="font-sans text-muted-foreground">
+                            Gastos bancarios de {nombreMes(grupo.mes || grupo.fecha_conciliacion)} · comisiones, tarifas e IVA contra el asiento mensual
+                          </span>
                         ) : esReversoBanco ? (
                           <span className="font-sans text-muted-foreground">
                             REF {grupo.referencia_reverso || movsBanco[0]?.referencia} · pago reversado por el banco (sin asiento en BC)
@@ -215,10 +231,14 @@ export function ConciliadosView({
                     <div className="flex items-center gap-4 shrink-0">
                       <div className="text-right">
                         <span className="font-bold text-sm text-foreground">
-                          {grupo.banco ? formatMoneyLocal(grupo.banco.monto) : formatMoneyLocal(0)}
+                          {grupo.banco
+                            ? formatMoneyLocal(grupo.banco.monto)
+                            : formatMoneyLocal(esGastos ? sumarMontos(movsBanco, (m) => m.monto) : 0)}
                         </span>
                         <p className="text-[10px] text-muted-foreground">
-                          {esReversoBanco
+                          {esGastos
+                            ? `${movsBanco.length} gastos · ${(grupo.partidas_bc || []).length} asiento BC`
+                            : esReversoBanco
                             ? `${movsBanco.length} movimientos del banco`
                             : `${(grupo.partidas_bc || []).length} ${grupo.partidas_bc?.length === 1 ? "asiento BC" : "asientos BC"}`}
                         </p>
@@ -245,10 +265,10 @@ export function ConciliadosView({
                   {/* Fila Desplegable: PARTIDAS VINCULADAS D365 BC */}
                   {isExpanded && (
                     <div className="bg-muted/20 border-t border-b p-3 pl-12 space-y-2 animate-in fade-in-50">
-                      {esReversoBanco && (
+                      {(esReversoBanco || esGastos) && (
                         <>
                           <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground pb-1 border-b">
-                            <span>MOVIMIENTOS DEL BANCO QUE SE ANULAN ENTRE SÍ</span>
+                            <span>{esGastos ? "GASTOS BANCARIOS DEL MES (EXTRACTO)" : "MOVIMIENTOS DEL BANCO QUE SE ANULAN ENTRE SÍ"}</span>
                             <span>Suma: {formatMoneyLocal(sumarMontos(movsBanco, (m) => m.monto))}</span>
                           </div>
                           <div className="space-y-1.5">

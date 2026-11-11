@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { conciliacionApi } from "@/lib/api/conciliacion";
 import type { CorteInicial, CorteInicialPayload, DashboardResponse } from "@/types/dashboard";
-import type { ActaDetalleResponse, EjecutarConciliacionPayload, MayorEditadoResponse, ResultadoConciliacionResponse } from "@/types/conciliacion";
+import type { ActaDetalleResponse, EjecutarConciliacionPayload, GastosBancariosResponse, MayorEditadoResponse, ResultadoConciliacionResponse } from "@/types/conciliacion";
 
 export const conciliacionKeys = {
   all: ["conciliacion"] as const,
@@ -15,7 +15,18 @@ export const conciliacionKeys = {
   dashboard: (desde: string, hasta: string, banco: string | null, idCuenta: string | null) =>
     [...conciliacionKeys.all, "dashboard", desde, hasta, banco, idCuenta] as const,
   corte: (idCuenta: string) => [...conciliacionKeys.all, "corte", idCuenta] as const,
+  gastos: (idCuenta: string, fechaInicio: string, fechaFin: string) =>
+    [...conciliacionKeys.all, "gastos", idCuenta, fechaInicio, fechaFin] as const,
 };
+
+export function useGastosBancarios(idCuenta: string | null | undefined, fechaInicio: string | null | undefined,
+                                   fechaFin: string | null | undefined, enabled = true) {
+  return useQuery<GastosBancariosResponse, Error>({
+    queryKey: conciliacionKeys.gastos(idCuenta || "", fechaInicio || "", fechaFin || ""),
+    queryFn: () => conciliacionApi.getGastosBancarios(idCuenta!, fechaInicio!, fechaFin!),
+    enabled: enabled && !!idCuenta && !!fechaInicio && !!fechaFin,
+  });
+}
 
 export function useDashboard(desde: string, hasta: string, banco: string | null, idCuenta: string | null) {
   return useQuery<DashboardResponse, Error>({

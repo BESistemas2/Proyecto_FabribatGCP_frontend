@@ -2,6 +2,7 @@ import { apiClient } from "./client";
 import type {
   ActaDetalleResponse,
   EjecutarConciliacionPayload,
+  GastosBancariosResponse,
   GrupoConciliado,
   MayorEditadoResponse,
   ResultadoConciliacionResponse,
@@ -95,6 +96,25 @@ export const conciliacionApi = {
       timeout: 120000,
     });
     guardarExcel(response, `Detalle_Cruces_${fechaInicio.substring(0, 7)}.xlsx`);
+  },
+
+  /** Gastos bancarios por mes: detalle, total y asiento de BC si ya cruzó. */
+  getGastosBancarios: async (idCuenta: string, fechaInicio: string, fechaFin: string) => {
+    const { data } = await apiClient.get<GastosBancariosResponse>("/conciliacion/gastos-bancarios", {
+      params: { id_cuenta: idCuenta, fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      timeout: 60000,
+    });
+    return data;
+  },
+
+  /** Excel de gastos bancarios por mes: insumo para el asiento mensual. */
+  descargarGastosBancarios: async (idCuenta: string, fechaInicio: string, fechaFin: string): Promise<void> => {
+    const response = await apiClient.get("/conciliacion/gastos-bancarios/excel", {
+      params: { id_cuenta: idCuenta, fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      responseType: "blob",
+      timeout: 60000,
+    });
+    guardarExcel(response, `Gastos_Bancarios_${fechaInicio.substring(0, 7)}.xlsx`);
   },
 
   getDashboard: async (params: { desde: string; hasta: string; banco?: string | null; id_cuenta?: string | null }) => {
