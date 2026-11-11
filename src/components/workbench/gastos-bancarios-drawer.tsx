@@ -157,11 +157,15 @@ function TarjetaMes({ mes }: { mes: GastosMes }) {
           </div>
         </div>
 
-        {mes.asiento ? (
-          <p className="text-xs">
-            <span className="font-medium">Asiento de BC:</span> {mes.asiento.document_no} del {formatDate(mes.asiento.fecha)}
-            {" · "}{mes.asiento.descripcion} · {formatMoney(mes.asiento.monto)}
-          </p>
+        {mes.asientos.length > 0 ? (
+          <div className="space-y-0.5 text-xs">
+            {mes.asientos.map((a, k) => (
+              <p key={a.entry_no_bc}>
+                <span className="font-medium">{k === 0 ? "Asiento de BC:" : "Ajuste en BC:"}</span> {a.document_no} del {formatDate(a.fecha)}
+                {" · "}{a.descripcion} · {formatMoney(a.monto)}
+              </p>
+            ))}
+          </div>
         ) : (
           <p className="text-xs text-muted-foreground">{est.ayuda}</p>
         )}

@@ -165,7 +165,8 @@ export interface GastosMes {
   cantidad: number;
   categorias: { categoria: string; monto: number | string }[];
   movimientos: MovimientoGasto[];
-  asiento: { document_no: string; fecha: string; descripcion: string; monto: number | string; entry_no_bc: number } | null;
+  /** Asiento mensual (el de mayor monto) y sus ajustes, p. ej. la nota de crédito del banco. Vacío si aún no cruza. */
+  asientos: { document_no: string; fecha: string; descripcion: string; monto: number | string; entry_no_bc: number }[];
 }
 
 export interface GastosBancariosResponse {
