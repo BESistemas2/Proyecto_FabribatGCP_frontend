@@ -163,6 +163,7 @@ export function ConciliadosView({
               const movsBanco = grupo.movimientos_banco || [];
               const esGastos = grupo.regla_aplicada === "REGLA_GASTOS_BANCARIOS";
               const esReversoBanco = movsBanco.length > 0 && !esGastos;
+              const esChequeDevuelto = grupo.regla_aplicada === "REGLA_CHEQUE_DEVUELTO";
 
               return (
                 <div key={grupo.id_conciliacion} className="transition-colors">
@@ -215,6 +216,10 @@ export function ConciliadosView({
                         ) : esGastos ? (
                           <span className="font-sans text-muted-foreground">
                             Gastos bancarios de {nombreMes(grupo.mes || grupo.fecha_conciliacion)} · comisiones, tarifas e IVA contra el asiento mensual
+                          </span>
+                        ) : esChequeDevuelto ? (
+                          <span className="font-sans text-muted-foreground">
+                            Depósito {grupo.referencia_reverso || movsBanco[0]?.referencia} · cheque devuelto por el banco (sin asiento en BC)
                           </span>
                         ) : esReversoBanco ? (
                           <span className="font-sans text-muted-foreground">

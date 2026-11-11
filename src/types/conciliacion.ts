@@ -7,6 +7,7 @@ export type ReglaCruce =
   | "REGLA_5_REF_ADICIONAL"
   | "REGLA_REVERSO_BC"
   | "REGLA_REVERSO_BANCO"
+  | "REGLA_CHEQUE_DEVUELTO"
   | "REGLA_GASTOS_BANCARIOS";
 
 /** BORRADOR: se puede volver a conciliar. CERRADO: partidas congeladas (APROBADO: actas antiguas). */

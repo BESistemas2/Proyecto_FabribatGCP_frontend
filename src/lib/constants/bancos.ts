@@ -161,6 +161,7 @@ export type ReglaCruce =
   | 'REGLA_5_REF_ADICIONAL'
   | 'REGLA_REVERSO_BC'
   | 'REGLA_REVERSO_BANCO'
+  | 'REGLA_CHEQUE_DEVUELTO'
   | 'REGLA_GASTOS_BANCARIOS';
 
 export interface RuleConfig {
@@ -187,6 +188,13 @@ export const REGLAS_CRUCE_CONFIG: Record<ReglaCruce, RuleConfig> = {
     descripcion: 'Banco Guayaquil: un pago y su reverso del mismo día (mismo número en REF/REF2, monto opuesto) se anulan entre sí. No cruzan con BC.',
     variant: 'secondary',
     className: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300',
+  },
+  REGLA_CHEQUE_DEVUELTO: {
+    label: 'Cheque devuelto',
+    shortLabel: 'Cheque devuelto',
+    descripcion: 'Un cheque depositado y devuelto por el banco (insuficiencia de fondos, protesto): el depósito y la devolución del mismo monto, hasta 10 días después, se anulan entre sí cuando ninguno tiene asiento en BC. Si BC registró el depósito, la devolución queda pendiente hasta que se registre en BC.',
+    variant: 'secondary',
+    className: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950 dark:text-orange-300',
   },
   REGLA_GASTOS_BANCARIOS: {
     label: 'Gastos bancarios del mes',
